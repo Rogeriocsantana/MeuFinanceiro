@@ -36,7 +36,7 @@ function ensureUiModeHandling(manifest) {
 }
 
 function withNativeTheme(config) {
-  const {withMainApplication, withDangerousMod, withAndroidManifest} = require('@expo/config-plugins');
+  const {withMainApplication, withDangerousMod, withAndroidManifest} = require('expo/config-plugins');
   config = withAndroidManifest(config, mod => {
     mod.modResults = ensureUiModeHandling(mod.modResults);
     return mod;
@@ -59,3 +59,4 @@ function withNativeTheme(config) {
 module.exports = withNativeTheme;
 module.exports.patchMainApplication = patchMainApplication;
 module.exports.ensureUiModeHandling = ensureUiModeHandling;
+

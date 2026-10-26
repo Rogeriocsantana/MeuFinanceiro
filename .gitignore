@@ -2,6 +2,15 @@
 /*
 !/.gitignore
 !/README.md
+!/docs/
+/docs/*
+!/docs/servidor-proprio.md
+!/docs/funcionalidades.md
+!/docs/media/
+/docs/media/*
+!/docs/media/*.jpg
+!/docs/media/*.gif
+!/docs/media/README.md
 !/SECURITY.md
 !/scripts/
 /scripts/*

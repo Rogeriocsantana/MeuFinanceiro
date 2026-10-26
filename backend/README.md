@@ -1,5 +1,9 @@
 # API Financeiro
 
+**[Guia completo: servidor próprio, Cloudflare, Node, HTTPS e conexão do app](../docs/servidor-proprio.md)**
+
+[Ver imagens e GIFs das configurações](../docs/funcionalidades.md#integracoes)
+
 API autenticada para integração com Pluggy, administração de usuários e sincronização opcional com Cloudflare D1. A aplicação recebe URL HTTPS e token de uma API compatível; não basta informar uma URL bancária arbitrária.
 
 ## Desenvolvimento e testes
