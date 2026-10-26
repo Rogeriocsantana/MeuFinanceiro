@@ -1,0 +1,28 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "financeiro-api",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-10-15",
+  "workers_dev": true,
+  "observability": {
+    "enabled": false
+  },
+  "kv_namespaces": [
+    {
+      "binding": "CREDENTIALS",
+      "id": "SUBSTITUA_PELO_ID_DO_SEU_KV"
+    }
+  ],
+  "vars": {
+    "ADMIN_USER_ID": "administrador",
+    "ALLOWED_ORIGINS": "http://localhost:8086,http://127.0.0.1:8086"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "financeiro-dados",
+      "database_id": "SUBSTITUA_PELO_ID_DO_SEU_D1",
+      "migrations_dir": "migrations"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+import React,{useState} from 'react';
+import {Linking} from 'react-native';
+import {View} from './ThemePrimitives';
+import {Text} from './Typography';
+import {Button,Card,Icon,C,u} from './ui';
+const steps=[
+ {icon:'person',title:'Conecte seus bancos no Meu Pluggy',text:'Crie sua conta pessoal no Meu Pluggy e autorize cada banco por lá. Faça a aprovação no aplicativo do banco quando solicitado.',url:'https://meu.pluggy.ai',action:'Abrir Meu Pluggy'},
+ {icon:'gear',title:'Crie sua aplicação',text:'Entre no Dashboard da Pluggy com a mesma conta. Abra Aplicações e crie uma aplicação. Anote o Client ID e guarde o Client Secret assim que ele aparecer.',url:'https://dashboard.pluggy.ai',action:'Abrir Dashboard'},
+ {icon:'lock',title:'Guarde o Client Secret',text:'O Client ID pode ser consultado novamente. O Client Secret aparece uma única vez. Se precisar gerar outro, o anterior deixa de funcionar: atualize os serviços que o utilizam. Guarde o segredo em um gerenciador de senhas.',url:'https://docs.pluggy.ai/pt/docs/guides/dashboard-connectors',action:'Consultar guia de credenciais'},
+ {icon:'wallet',title:'Vincule o conector MeuPluggy',text:'Na aplicação, abra Demo → Conectar Conta. Escolha MeuPluggy e entre na sua conta. Se não aparecer, confira Customização → Conectores. Nesse fluxo pessoal, selecione MeuPluggy, e não o conector direto do banco.',url:'https://docs.pluggy.ai/pt/docs/guides/meu-pluggy-personal-use',action:'Ver instruções oficiais'},
+ {icon:'file',title:'Copie os IDs das conexões',text:'Na página Demo, abra cada registro em Itens Conectados e copie seu itemId. Guarde os IDs dos bancos que quer consultar. Eles são diferentes dos IDs de contas e de transações.',url:'https://dashboard.pluggy.ai',action:'Abrir conexões no Dashboard'},
+ {icon:'refresh',title:'Ative no Financeiro',text:'Em Integrações, importe seu arquivo de servidor e conecte. Informe seu Client ID, Client Secret e os itemIds, um por linha. Toque em Salvar credenciais Pluggy e depois em Atualizar tudo. O servidor gera a API Key temporária; você não precisa criá-la ou copiá-la.',url:'',action:''},
+];
+export default function PluggyGuide({onConfigure}:{onConfigure:()=>void}){
+ const [index,setIndex]=useState(0),step=steps[index]!;
+ return <><Text style={u.big}>Configurar sua Pluggy</Text><Text style={u.muted}>Cada pessoa usa sua própria conta e suas próprias credenciais.</Text><Card><View style={{flexDirection:'row',alignItems:'center',gap:12}}><Icon name={step.icon} size={30} color={C.blue}/><Text style={u.small}>Passo {index+1} de {steps.length}</Text></View><Text style={u.h2}>{step.title}</Text><Text style={u.muted}>{step.text}</Text>{!!step.url&&<Button label={step.action} icon="file" secondary onPress={()=>Linking.openURL(step.url).then(()=>{})}/>}<View style={{flexDirection:'row',gap:6}}>{steps.map((_,i)=><View key={i} style={{flex:1,height:4,borderRadius:4,backgroundColor:i<=index?C.blue:C.line}}/>)}</View><Button label={index===steps.length-1?'Abrir Integrações':'Próximo passo'} icon={index===steps.length-1?'gear':'chevron'} onPress={()=>index===steps.length-1?onConfigure():setIndex(index+1)}/>{index>0&&<Button label="Passo anterior" secondary icon="back" onPress={()=>setIndex(index-1)}/>}</Card><Text style={u.small}>As telas externas podem mudar. Consulte os guias oficiais pelos botões acima. O consentimento bancário é feito na Pluggy e no banco; o Financeiro não pede sua senha bancária.</Text></>;
+}

@@ -1,0 +1,8 @@
+{
+  "server": {
+    "token": "",
+    "url": "https://seu-servidor.example"
+  },
+  "format": "financeiro-connection",
+  "version": 1
+}

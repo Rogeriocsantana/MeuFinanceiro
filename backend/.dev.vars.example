@@ -1,0 +1,7 @@
+# Somente dados fictícios. Copie para .dev.vars, ignorado pelo Git.
+# Gere um token aleatório de 32 bytes por pessoa. Guarde apenas seu SHA-256 aqui.
+# O administrador provisiona o usuário/token. O app configura somente sua própria Pluggy.
+USERS_JSON='[{"id":"usuario-local","tokenHash":"SHA256_HEXADECIMAL_DO_TOKEN","itemIds":[]}]'
+# 32 bytes aleatórios codificados em base64 (secret exclusivo do servidor).
+CREDENTIALS_KEY='CONFIGURAR_BASE64_DE_32_BYTES'
+ALLOWED_ORIGINS='http://localhost:8086'

@@ -1,0 +1,63 @@
+{
+  "expo": {
+    "name": "Financeiro",
+    "slug": "financeiro-mobile",
+    "version": "0.3.34",
+    "scheme": "financeiro",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "android": {
+      "package": "com.roger.financeiro",
+      "allowBackup": false,
+      "versionCode": 35,
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE"
+      ],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "plugins": [
+      "expo-sqlite",
+      "expo-secure-store",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "imageWidth": 160,
+          "backgroundColor": "#f5f7fb",
+          "dark": {
+            "backgroundColor": "#202020",
+            "image": "./assets/splash.png"
+          }
+        }
+      ],
+      "./plugins/withAndroidRelease",
+      "./plugins/withNativeTheme",
+      "expo-notifications",
+      "expo-background-task",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Escolha uma foto para o perfil ou para uma pessoa.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ]
+    ],
+    "icon": "./assets/icon.png",
+    "extra": {
+      "authorName": "Rogério",
+      "githubUrl": "https://github.com/rogeriocsantana",
+      "linkedinUrl": "https://www.linkedin.com/in/rogeriocsantana"
+    }
+  }
+}

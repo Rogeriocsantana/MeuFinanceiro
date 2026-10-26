@@ -1,0 +1,15 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript');
+function adapter(){
+ const scheduled=new Map(),events=new Set(),calls=[],preferences={notifications:{enabled:true,types:['bank-updated']}};
+ let desired=[{id:'financeiro-test-bill',title:'Fatura vence hoje',body:'Confira sua fatura.',at:new Date('2026-12-10T12:00:00Z'),page:'cards',name:'card'}];
+ const api={setNotificationHandler:()=>{},AndroidImportance:{DEFAULT:3},SchedulableTriggerInputTypes:{DATE:'date'},setNotificationChannelAsync:async()=>{},getPermissionsAsync:async()=>({granted:true}),requestPermissionsAsync:async()=>({granted:true}),getAllScheduledNotificationsAsync:async()=>[...scheduled.values()],cancelScheduledNotificationAsync:async id=>{calls.push(['cancel',id]);scheduled.delete(id);},scheduleNotificationAsync:async n=>{calls.push(['schedule',n.identifier]);scheduled.set(n.identifier,n);},addNotificationResponseReceivedListener:fn=>({remove(){}}),getLastNotificationResponseAsync:async()=>null};
+ const replacements={'react-native':{Platform:{OS:'android'},Linking:{}},'expo-notifications':api,'expo-constants':{default:{appOwnership:'standalone',expoConfig:{android:{package:'com.roger.financeiro'}}}},'../data/notificationPlan':{notificationPrefix:()=> 'financeiro-test-',notificationPlan:()=>desired},'../data/localControls':{listControls:async()=>[]},'../data/appPreferences':{loadAppPreferences:async()=>preferences,recordDeviceEvent:async(scope,key)=>{if(events.has(key))return false;events.add(key);return true;}}};
+ const m={exports:{}};new Function('require','module','exports',ts.transpileModule(fs.readFileSync('src/services/notifications.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,esModuleInterop:true}}).outputText)(name=>replacements[name]||require(name),m,m.exports);
+ return {service:m.exports,calls,preferences,setDesired:value=>{desired=value;},scheduled};
+}
+test('agendamento nativo usa identificador estável, não duplica e cancela obrigação quitada',async()=>{
+ const f=adapter(),data={scope:'owner',records:[]};await f.service.scheduleFinancialNotifications(data);assert.equal(f.calls.length,1);await f.service.scheduleFinancialNotifications(data);assert.equal(f.calls.length,1);f.setDesired([]);await f.service.scheduleFinancialNotifications(data);assert.equal(f.scheduled.size,0);assert.equal(f.calls[1][0],'cancel');
+});
+test('aviso de dados atualizados respeita preferência, alteração e repetição',async()=>{
+ const f=adapter(),data={scope:'owner',syncedAt:'2026-10-20T12:00:00Z',records:[]};await f.service.notifyBankUpdated(data,0);assert.equal(f.calls.length,0);await f.service.notifyBankUpdated(data,5);await f.service.notifyBankUpdated(data,5);assert.equal(f.calls.length,1);f.preferences.notifications.enabled=false;await f.service.notifyBankUpdated({...data,syncedAt:'2026-10-20T13:00:00Z'},6);assert.equal(f.calls.length,1);
+});

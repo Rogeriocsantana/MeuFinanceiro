@@ -1,0 +1,10 @@
+const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),{spawnSync}=require('node:child_process');
+const root=path.resolve(__dirname,'..'),dir=path.join(root,'.private/android-signing'),file=path.join(dir,'signing.json'),store=path.join(dir,'financeiro-release.jks');
+if(fs.existsSync(file)||fs.existsSync(store))throw Error('Assinatura já existente; nada será substituído.');
+const javaHome=process.env.JAVA_HOME,keytool=javaHome?path.join(javaHome,'bin/keytool.exe'):'keytool';
+const check=spawnSync(keytool,['-help'],{stdio:'ignore'});if(check.error||check.status!==0)throw Error('Instale JDK e configure JAVA_HOME antes de gerar a assinatura.');
+fs.mkdirSync(dir,{recursive:true});const password=crypto.randomBytes(32).toString('base64url');
+const result=spawnSync(keytool,['-genkeypair','-keystore',store,'-storetype','JKS','-alias','financeiro','-keyalg','RSA','-keysize','3072','-validity','10000','-dname','CN=Financeiro Android','-storepass:env','FINANCEIRO_SIGNING_PASSWORD','-keypass:env','FINANCEIRO_SIGNING_PASSWORD'],{stdio:'pipe',env:{...process.env,FINANCEIRO_SIGNING_PASSWORD:password}});
+if(result.status!==0)throw Error('Não foi possível criar a assinatura; confira o JDK.');
+fs.writeFileSync(file,JSON.stringify({keyAlias:'financeiro',storePassword:password,keyPassword:password}),{mode:0o600,flag:'wx'});
+console.log('Assinatura criada em .private/android-signing. Guarde cópia privada dos dois arquivos para futuras atualizações.');

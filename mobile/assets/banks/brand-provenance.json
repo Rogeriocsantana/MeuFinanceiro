@@ -1,0 +1,152 @@
+[
+  {
+    "id": "nubank",
+    "ispb": "18236120",
+    "type": "openfinance",
+    "org": "NU PAGAMENTOS S.A. - INSTITUICAO DE PAGAMENTO",
+    "cnpj": "18236120000158",
+    "uri": "https://nuapp.nubank.com.br/open-banking/logo.svg",
+    "sha256": "a4a63bd7d76bd7f3377335ae2a4c9d1f80d602f6a69fd5dba375f46d269272a6",
+    "updatedAt": "2026-07-17"
+  },
+  {
+    "id": "inter",
+    "ispb": "00416968",
+    "type": "openfinance",
+    "org": "BANCO INTER",
+    "cnpj": "00416968000101",
+    "uri": "https://marketing.bancointer.com.br/arquivos/images/app-icon.svg",
+    "sha256": "09b8e88439fd0106deef4eb448fea00d127e1a7dd592b5baa76fea07b226c128",
+    "updatedAt": "2026-07-17"
+  },
+  {
+    "id": "bradesco",
+    "ispb": "60746948",
+    "type": "openfinance",
+    "org": "BANCO BRADESCO SA",
+    "cnpj": "60746948000112",
+    "uri": "https://banco.bradesco/open-finance/logo/icones_vetorial-pf.svg",
+    "sha256": "eab31731175c5229512016c2cdf98f38affecb891c217bbe6ea6b83e4c5bdb38",
+    "updatedAt": "2026-07-17"
+  },
+  {
+    "id": "santander",
+    "ispb": "90400888",
+    "type": "openfinance",
+    "org": "BCO SANTANDER (BRASIL) S.A.",
+    "cnpj": "90400888000142",
+    "uri": "https://cms.santander.com.br/sites/WPS/imagem/santander_chama/23-10-31_194829_P_santander_chama.svg",
+    "sha256": "3db65acca8651f09096f81c004513586b3b22075041afe7e29df16f658b7d766",
+    "updatedAt": "2026-07-17"
+  },
+  {
+    "id": "caixa",
+    "ispb": "00360305",
+    "type": "openfinance",
+    "org": "CAIXA ECONOMICA FEDERAL",
+    "cnpj": "00360305000104",
+    "uri": "https://consentimento.openbanking.caixa.gov.br/assets/images/logomarca_caixa.svg",
+    "sha256": "3073827b49f87a32f69c93d8008583a1af2f2498b873eabd9f9d64d130c70dfd",
+    "updatedAt": "2026-07-17"
+  },
+  {
+    "id": "banco-do-brasil",
+    "ispb": "00000000",
+    "type": "openfinance",
+    "org": "BANCO DO BRASIL S.A.",
+    "cnpj": "00000000000191",
+    "uri": "https://www.bb.com.br/docs/pub/inst/img/LogoBB.svg",
+    "sha256": "8bd7640e0e08e49cc00d3b4b901a44add88a1a3e9539b8cd71c8f04692d88caa",
+    "updatedAt": "2026-07-17"
+  },
+  {
+    "id": "picpay",
+    "ispb": "22896431",
+    "type": "openfinance",
+    "org": "PICPAY",
+    "cnpj": "22896431000110",
+    "uri": "https://picpay.s3.sa-east-1.amazonaws.com/openbanking/picpay-logo-icon-pf.svg",
+    "sha256": "5dda49002fc6d9b323a30d88afd7e9ba5b54982dc5ffcf630364aa94bfcf43b8",
+    "updatedAt": "2026-07-17"
+  },
+  {
+    "id": "c6-bank",
+    "ispb": "31872495",
+    "type": "openfinance",
+    "org": "BCO C6 S.A.",
+    "cnpj": "31872495000172",
+    "uri": "https://cdn.c6bank.com.br/open-banking/c6bank-logo.svg",
+    "sha256": "deb2fd2d220ad11000f97f2ee553308c1e98311c979a0a003530aca76f83b011",
+    "updatedAt": "2026-07-17"
+  },
+  {
+    "id": "btg-pactual",
+    "ispb": "30306294",
+    "type": "openfinance",
+    "org": "BANCO BTG PACTUAL S.A.",
+    "cnpj": "30306294000145",
+    "uri": "https://banking-public-prd.s3.sa-east-1.amazonaws.com/open-finance/logo/btginvestimentos/btginvestimentos.svg",
+    "sha256": "ac521163417436f99df1bd1cb2512fe75ff55041bb9345f0394deb2d5634da6d",
+    "updatedAt": "2026-07-17"
+  },
+  {
+    "id": "safra",
+    "ispb": "58160789",
+    "type": "openfinance",
+    "org": "BCO SAFRA S.A.",
+    "cnpj": "58160789000128",
+    "uri": "https://www.safra.com.br/shared/assets/img/safra-of.svg",
+    "sha256": "9c25f4839fe8a258db6c0a59f192120f97f5ef49830f3db05ebd6cac82e02e50",
+    "updatedAt": "2026-07-17"
+  },
+  {
+    "id": "sicredi",
+    "ispb": "01181521",
+    "type": "openfinance",
+    "org": "CONFEDERACAO DAS COOPERATIVAS DO SICREDI - CONFEDERACAO SICREDI",
+    "cnpj": "03795072000160",
+    "uri": "https://www.sicredi.com.br/openbanking/app/assets/images/shared/logo/logo_sicredi_512.svg",
+    "sha256": "046e1c6e7cd6c28502f1dcc3ae24f359a64fbf325751f7be7f9a2e752e6b5088",
+    "updatedAt": "2026-07-17"
+  },
+  {
+    "id": "sicoob",
+    "ispb": "02038232",
+    "type": "openfinance",
+    "org": "Confederacao Nacional das Cooperativas do Sicoob",
+    "cnpj": "04891850000188",
+    "uri": "https://sicoob-openbanking.s3.sa-east-1.amazonaws.com/icone-sicoob.svg",
+    "sha256": "8d4b418f1c75262ad4526137a70d6828902c7a10d1243480824f747e33555ca3",
+    "updatedAt": "2026-07-17"
+  },
+  {
+    "id": "neon",
+    "ispb": "20855875",
+    "type": "openfinance",
+    "org": "Neon Pagamentos",
+    "cnpj": "20855875000182",
+    "uri": "https://opbk-brasil.s3.sa-east-1.amazonaws.com/neon/logo.svg",
+    "sha256": "6fcb82100b54c355d8d0ca7e67ac577091cf15c9e92733cfa4a5a34bd1668a7b",
+    "updatedAt": "2026-07-17"
+  },
+  {
+    "id": "pagbank",
+    "ispb": "08561701",
+    "type": "openfinance",
+    "org": "PAGSEGURO",
+    "cnpj": "08561701000101",
+    "uri": "https://openfinance.api.pagseguro.uol.com.br/img/logo_pagbank.svg",
+    "sha256": "ea47e0f0d6687547248eadbafbd867e7e3954b70b96b2cc3284724a22d47d7c4",
+    "updatedAt": "2026-07-17"
+  },
+  {
+    "id": "original",
+    "ispb": "92894922",
+    "type": "direct-uri",
+    "org": null,
+    "cnpj": null,
+    "uri": "https://www.original.com.br/src/img/ico-original-green.svg",
+    "sha256": "2b684ca27391631c75b4a9d37ed7dbb407738922424dc37c4375ba1618594308",
+    "updatedAt": "2026-10-18"
+  }
+]
