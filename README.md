@@ -14,6 +14,36 @@ Aplicativo Android desenvolvido em React Native e TypeScript, com SQLite no apar
 
 Baixe o APK em [Releases](https://github.com/Rogeriocsantana/MeuFinanceiro/releases). A partir da versão 0.3.38, o aplicativo avisa no topo quando houver uma versão mais nova. Consulte o [guia de atualizações](docs/atualizacoes.md).
 
+### Atualizar sem procurar outro APK
+
+Quando uma nova versão está disponível, aparece uma faixa no topo com a versão e o tamanho do download. Toque em **ⓘ** para ler as novidades ou em **Atualizar** para baixar. Na primeira vez, o Android pode pedir permissão para instalar atualizações desta origem; depois, volte ao app e toque em Atualizar novamente. A instalação sempre passa pela confirmação do Android.
+
+<p align="center"><img src="docs/media/claro/atualizacao-app.png" width="300" alt="Faixa de atualização disponível com versão, tamanho, novidades, botão Atualizar e dispensar"></p>
+
+> Captura demonstrativa da prévia web, com dados fictícios e a faixa simulando uma atualização disponível. O download e a instalação são recursos do Android. O app verifica integridade e assinatura antes de abrir o instalador.
+
+Para testar a atualização **0.3.38 → 0.3.39**, encerre e reabra o aplicativo instalado. A faixa deve oferecer a versão 0.3.39. Instale por cima da versão atual, sem desinstalar. Ao concluir, abra **Mais → Gestão financeira** e confira **Resumo do mês** e **Gastos por dia** na nova posição. Versões iguais ou anteriores não geram aviso. Enquanto o aplicativo continua aberto, novas consultas têm um intervalo mínimo de uma hora.
+
+## Novas formas de acompanhar o mês
+
+As novas telas usam as informações e classificações já existentes, com acesso aos detalhes. A comparação por categorias continua em **Análises**.
+
+| Função | Onde encontrar | Como usar |
+| --- | --- | --- |
+| Resumo do mês | Mais → Gestão financeira | Consulte receitas próprias, gastos pessoais e resultado do período. Toque nas categorias para abrir seus movimentos e use o acesso à comparação de categorias. O resultado do mês não é o saldo disponível em conta. |
+| Gastos por dia | Mais → Gestão financeira | Veja o calendário com intensidade proporcional ao gasto e toque em um dia para consultar os lançamentos. Compare as médias de dias úteis e fins de semana. Dias futuros ficam apagados. |
+| Controles e alertas | Início → Seus controles; Mais → Configurações → Alertas dos controles | Use o botão + para escolher uma categoria ainda sem controle, informe o limite e ative ou desative os avisos. Toque em um controle para editar ou excluir. |
+| Novos lançamentos | Início → Para acompanhar | Abra os movimentos identificados nas importações recentes para revisar seus detalhes e classificações. |
+| Contas recorrentes | Mais → Ferramentas | Cadastre compromissos fixos ou variáveis e vincule os lançamentos correspondentes, como uma conta de luz cujo valor muda a cada mês. |
+| Atualização do app | Faixa no topo, quando houver uma nova Release | Consulte as novidades, baixe o APK e confirme a instalação no Android. Isso atualiza o aplicativo; a sincronização bancária continua com suas próprias configurações. |
+
+<table>
+<tr><th>Menu organizado</th><th>Resumo do mês</th><th>Gastos por dia</th></tr>
+<tr><td><img src="docs/media/claro/menu-gestao.png" width="250" alt="Resumo do mês e Gastos por dia na categoria Gestão financeira"></td><td><img src="docs/media/claro/resumo-mensal.png" width="250" alt="Resultado mensal e categorias de gastos com valores fictícios"></td><td><img src="docs/media/claro/gastos-dia.png" width="250" alt="Calendário de gastos pessoais com dados fictícios"></td></tr>
+</table>
+
+> Capturas da prévia web em tema claro, com dados fictícios. Os atalhos foram acrescentados ao sistema existente; Aparência e Sobre continuam ao final do menu Mais.
+
 ## Por que este projeto existe
 
 Todo mês, separar minhas compras das compras de amigos e familiares nas faturas exigia tempo e conferência manual. Além disso, eu precisava acompanhar empréstimos em planilhas e somar parcelas futuras para entender quanto ainda tinha disponível e o que já estava comprometido.

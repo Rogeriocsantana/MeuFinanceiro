@@ -1,5 +1,20 @@
 # Atualizações pelo GitHub
 
+<img src="media/claro/atualizacao-app.png" width="300" alt="Demonstração da faixa de atualização no topo do aplicativo">
+
+Captura da prévia web com dados fictícios e aviso demonstrativo. No Android, a faixa consulta as Releases reais.
+
+## Teste da versão 0.3.39
+
+1. Mantenha a versão 0.3.38 instalada. Não é necessário baixar o APK seguinte pelo navegador.
+2. Encerre e reabra o aplicativo para consultar a última Release.
+3. Confira versão 0.3.39, tamanho e novidades na faixa superior.
+4. Toque em Atualizar. Se o Android pedir permissão para instalar desta origem, autorize, volte e toque novamente.
+5. Confirme a instalação e abra o app.
+6. Verifique em Mais que Resumo do mês e Gastos por dia estão em Gestão financeira. Seus dados devem permanecer.
+
+Se o app já estava aberto durante a publicação, a consulta em segundo plano respeita o intervalo de uma hora. Encerrar e reabrir inicia uma nova consulta. O botão de atualizar dados bancários é independente da atualização do APK.
+
 O Android consulta a última Release estável de `Rogeriocsantana/MeuFinanceiro` ao abrir e ao retornar ao app, com intervalo mínimo de uma hora. Uma faixa no topo mostra versão, tamanho, novidades e a ação Atualizar. Dispensar a faixa vale apenas para a sessão.
 
 Cada Release deve conter o APK assinado e `update.json`:

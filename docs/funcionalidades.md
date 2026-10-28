@@ -6,6 +6,8 @@ Escolha o tema para ver as 20 áreas do aplicativo, cada uma com imagem, GIF e e
 
 **[Abrir tema claro](funcionalidades-claro.md)** · **[Abrir tema escuro](funcionalidades-escuro.md)**
 
+As funções recentes têm [capturas e descrições no README](../README.md#novas-formas-de-acompanhar-o-mês): Resumo do mês, Gastos por dia, controles, alertas, novos lançamentos e contas recorrentes. Veja também o [guia ilustrado de atualização pelo app](atualizacoes.md).
+
 [Guia completo do servidor próprio](servidor-proprio.md) · [Voltar ao README](../README.md)
 
 Os GIFs são sequências de telas capturadas na prévia web em formato de celular. Não são gravações contínuas nem executam operações bancárias reais.
