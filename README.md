@@ -14,6 +14,8 @@ Aplicativo Android desenvolvido em React Native e TypeScript, com SQLite no apar
 
 Baixe o APK em [Releases](https://github.com/Rogeriocsantana/MeuFinanceiro/releases). A partir da versão 0.3.38, o aplicativo avisa no topo quando houver uma versão mais nova. Consulte o [guia de atualizações](docs/atualizacoes.md).
 
+**Correção do atualizador:** quem instalou 0.3.38 ou 0.3.39 deve instalar manualmente a [versão 0.3.40](https://github.com/Rogeriocsantana/MeuFinanceiro/releases/tag/v0.3.40), por cima da atual. Ela corrige a consulta no Android e acrescenta a verificação manual em Mais → Sobre o aplicativo. As próximas versões podem ser encontradas pelo atualizador corrigido.
+
 ### Atualizar sem procurar outro APK
 
 Quando uma nova versão está disponível, aparece uma faixa no topo com a versão e o tamanho do download. Toque em **ⓘ** para ler as novidades ou em **Atualizar** para baixar. Na primeira vez, o Android pode pedir permissão para instalar atualizações desta origem; depois, volte ao app e toque em Atualizar novamente. A instalação sempre passa pela confirmação do Android.
@@ -22,7 +24,7 @@ Quando uma nova versão está disponível, aparece uma faixa no topo com a vers�
 
 > Captura demonstrativa da prévia web, com dados fictícios e a faixa simulando uma atualização disponível. O download e a instalação são recursos do Android. O app verifica integridade e assinatura antes de abrir o instalador.
 
-Para testar a atualização **0.3.38 → 0.3.39**, encerre e reabra o aplicativo instalado. A faixa deve oferecer a versão 0.3.39. Instale por cima da versão atual, sem desinstalar. Ao concluir, abra **Mais → Gestão financeira** e confira **Resumo do mês** e **Gastos por dia** na nova posição. Versões iguais ou anteriores não geram aviso. Enquanto o aplicativo continua aberto, novas consultas têm um intervalo mínimo de uma hora.
+Após instalar a correção 0.3.40, encerre e reabra o aplicativo quando uma versão superior for publicada. A faixa deve oferecer a nova versão. Instale por cima da versão atual, sem desinstalar. Ao concluir, abra **Mais → Gestão financeira** e confira **Resumo do mês** e **Gastos por dia** na nova posição. Versões iguais ou anteriores não geram aviso. Enquanto o aplicativo continua aberto, novas consultas têm um intervalo mínimo de um minuto.
 
 ## Novas formas de acompanhar o mês
 
@@ -227,4 +229,5 @@ Veja [SECURITY.md](SECURITY.md) antes de implantar ou compartilhar dados de diag
 Projeto pessoal de Rogério Santana. React Native, Expo, TypeScript e SQLite formam a base do aplicativo; Pluggy fornece a integração de dados bancários autorizados. O projeto não é um aplicativo oficial dos bancos exibidos.
 
 Logos pertencem às respectivas instituições. Proveniência em [mobile/assets/banks/SOURCES.md](mobile/assets/banks/SOURCES.md). Não há licença de redistribuição definida nesta entrega.
+
 

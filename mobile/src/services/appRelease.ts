@@ -10,7 +10,7 @@ export function parseRelease(release:any,manifest:any,installed:number):AppRelea
  return {version:manifest.version,versionCode:manifest.versionCode,size:asset.size,sha256:manifest.sha256,url:asset.browser_download_url,notes:String(release.body||'Melhorias e correções.').slice(0,12000)};
 }
 export async function latestRelease(installed:number):Promise<AppRelease|null>{
- const get=async(url:string)=>{const response=await fetch(url,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(20000)});if(response.status===404)return null;if(!response.ok)throw Error('Não foi possível consultar as atualizações.');return response.json();};
+ const get=async(url:string)=>{const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),20000);try{const response=await fetch(url,{headers:{Accept:'application/json','Cache-Control':'no-cache'},signal:controller.signal});if(response.status===404)return null;if(!response.ok)throw Error('Não foi possível consultar as atualizações (HTTP '+response.status+').');return await response.json();}finally{clearTimeout(timer);}};
  const release=await get(`https://api.github.com/repos/${RELEASE_REPO}/releases/latest`);if(!release)return null;
  const manifest=release.assets?.find((a:any)=>a.name==='update.json');if(!manifest)return null;
  if(!manifest.browser_download_url?.startsWith(`https://github.com/${RELEASE_REPO}/releases/download/`))throw Error('Origem de atualização inválida.');
