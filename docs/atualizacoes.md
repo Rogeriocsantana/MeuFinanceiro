@@ -6,6 +6,12 @@ Essas versões usavam uma função de tempo limite indisponível no ambiente Rea
 
 Em Mais → Sobre o aplicativo, use **Verificar atualização do aplicativo**. A consulta manual informa se existe atualização, se a versão já é a mais recente ou se houve falha de conexão. O aviso automático continua no topo quando há uma versão mais nova.
 
+Na versão 0.3.41, o botão ganhou contorno e fundo transparente para acompanhar o cartão também no tema escuro. O filtro do Resumo do mês e das outras telas novas foi alinhado ao cabeçalho, como nas demais páginas.
+
+<img src="media/escuro/atualizacao-botao.png" width="300" alt="Botão Verificar atualizações com contorno e fundo transparente no tema escuro">
+
+Captura demonstrativa da prévia web; a versão exibida na imagem é a da prévia, não a versão do APK publicado.
+
 <img src="media/claro/atualizacao-app.png" width="300" alt="Demonstração da faixa de atualização no topo do aplicativo">
 
 Captura da prévia web com dados fictícios e aviso demonstrativo. No Android, a faixa consulta as Releases reais.
