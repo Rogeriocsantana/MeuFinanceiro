@@ -1,6 +1,6 @@
 import type {BankRecord,LocalAnnotation,LocalBankData} from './pluggyModel';
 import type {Control} from './localControls';
-import {installmentInfo,installmentDueDate,installmentPurchaseDay,installmentPurchaseDatesCompatible} from './installmentContinuity';
+import {installmentInfo,installmentDueDate,installmentPurchaseDay,installmentPurchaseDatesCompatible,installmentAmountsCompatible} from './installmentContinuity';
 
 export type PurchaseSeries=Control&{type:'purchase-series';scope:string;sourceTransactionId:string;identity:string;anchorAmountCents:number;label:string;ownerId?:string|null;dueDay?:number;classification?:{nature:string;categoryId:string}};
 // Records are replaced on refresh; retain identities only while this snapshot is alive.
@@ -9,7 +9,7 @@ export function purchaseIdentity(tx:BankRecord,data:LocalBankData){
  let cache=identityCache.get(data.records);if(!cache){cache=new WeakMap();identityCache.set(data.records,cache);}
  const cached=cache.get(tx);if(cached)return cached.value;
  const info=installmentInfo(tx,data);
- if(info?.purchaseKey.startsWith('purchase:')){const day=info.purchaseKey.split('|')[0]!,candidates=data.records.filter(other=>other.itemId===tx.itemId&&other.accountId===tx.accountId&&Math.abs(Math.abs(other.amountCents)-info.amount)<=5&&installmentPurchaseDatesCompatible(other,tx)).map(other=>installmentInfo(other,data)).filter((other):other is NonNullable<typeof info>=>!!other&&other.purchaseKey.startsWith('purchase:')&&other.count===info.count&&other.cycle===info.cycle&&Math.abs(other.amount-info.amount)<=5&&(other.merchant===info.merchant||Math.min(other.merchant.length,info.merchant.length)>=12&&(other.merchant.startsWith(info.merchant)||info.merchant.startsWith(other.merchant))));const merchant=candidates.map(c=>c.merchant).sort((a,b)=>a.length-b.length||a.localeCompare(b))[0]||info.merchant;const canonicalDay=[day,...candidates.map(c=>c.purchaseKey.split('|')[0]!)].sort()[0]!;info.purchaseKey=canonicalDay+'|'+merchant;}
+ if(info?.purchaseKey.startsWith('purchase:')){const day=info.purchaseKey.split('|')[0]!,candidates=data.records.filter(other=>other.itemId===tx.itemId&&other.accountId===tx.accountId&&installmentPurchaseDatesCompatible(other,tx)).map(other=>installmentInfo(other,data)).filter((other):other is NonNullable<typeof info>=>!!other&&other.purchaseKey.startsWith('purchase:')&&other.count===info.count&&other.cycle===info.cycle&&installmentAmountsCompatible(other,info)&&(other.merchant===info.merchant||Math.min(other.merchant.length,info.merchant.length)>=12&&(other.merchant.startsWith(info.merchant)||info.merchant.startsWith(other.merchant))));const merchant=candidates.map(c=>c.merchant).sort((a,b)=>a.length-b.length||a.localeCompare(b))[0]||info.merchant;const canonicalDay=[day,...candidates.map(c=>c.purchaseKey.split('|')[0]!)].sort()[0]!;info.purchaseKey=canonicalDay+'|'+merchant;}
  const value=info?JSON.stringify([tx.itemId,tx.accountId,info.purchaseKey,info.count,info.cycle]):null;
  cache.set(tx,{value});return value;
 }
@@ -17,7 +17,7 @@ export function purchaseFamily(data:LocalBankData,anchor:BankRecord){
  const context=data;
  const identity=purchaseIdentity(anchor,context),info=installmentInfo(anchor,context);
  if(!identity||!info)throw Error('Selecione uma compra parcelada identificada pela instituição.');
- const members=data.records.filter(tx=>purchaseIdentity(tx,context)===identity&&Math.abs(Math.abs(tx.amountCents)-info.amount)<=5);
+ const members=data.records.filter(tx=>purchaseIdentity(tx,context)===identity&&installmentAmountsCompatible(installmentInfo(tx,context)!,info));
  const numbers=members.map(tx=>installmentInfo(tx,context)!.n);
  if(new Set(numbers).size!==numbers.length)throw Error('Há compras indistinguíveis nesta série. Confira as parcelas antes de alterar.');
  return {identity,members,info};
@@ -52,7 +52,7 @@ export function purchaseSeriesChanges(data:LocalBankData,controls:Control[],seri
     const due=installmentDueDate(tx,month,data,controls)||fallback;
     if(!due){conflicts.push({id:tx.id,reason:'Vencimento da parcela indisponível ou ambíguo.'});continue;}
     next.personId=owner.id;next.personName=owner.name;next.nature='Despesa';
-    next.shares=[{id:sameOwner?shares[0]!.id:'series-full:'+tx.id,person:owner.name,amount:(Math.abs(tx.amountCents)/100).toFixed(2).replace('.',','),dueDate:sameOwner?shares[0]!.dueDate:due}];
+    next.shares=[{id:sameOwner?shares[0]!.id:'series-full:'+tx.id,person:owner.name,amount:(Math.abs(tx.amountCents)/100).toFixed(2).replace('.',','),dueDate:installmentDueDate(tx,month,data,controls,true)||(sameOwner?shares[0]!.dueDate:due)}];
    }else{delete next.personId;delete next.personName;next.shares=[];}
    next.seriesOwnerId=series.ownerId;next.sourceAmountCentsAtEdit=tx.amountCents;
   }
@@ -65,7 +65,7 @@ export function purchaseDisplayName(tx:BankRecord,annotation?:LocalAnnotation){r
 export function installmentPurchases(data:LocalBankData,controls:Control[]=[]){
  const context=data;
  const buckets=new Map<string,BankRecord[]>();
- for(const tx of [...data.records].sort((a,b)=>Math.abs(a.amountCents)-Math.abs(b.amountCents)||a.id.localeCompare(b.id))){const base=purchaseIdentity(tx,context);if(!base)continue;const keys=[...buckets.keys()].filter(k=>k.startsWith(base+'|amount:')),key=keys.find(k=>Math.abs(Math.abs(buckets.get(k)![0]!.amountCents)-Math.abs(tx.amountCents))<=5)||base+'|amount:'+Math.abs(tx.amountCents);buckets.set(key,[...(buckets.get(key)||[]),tx]);}
+ for(const tx of [...data.records].sort((a,b)=>Math.abs(a.amountCents)-Math.abs(b.amountCents)||a.id.localeCompare(b.id))){const base=purchaseIdentity(tx,context);if(!base)continue;const keys=[...buckets.keys()].filter(k=>k.startsWith(base+'|amount:')),key=keys.find(k=>buckets.get(k)!.every(member=>installmentAmountsCompatible(installmentInfo(member,context)!,installmentInfo(tx,context)!)))||base+'|amount:'+Math.abs(tx.amountCents);buckets.set(key,[...(buckets.get(key)||[]),tx]);}
  return [...buckets].map(([identity,members])=>{
   members.sort((a,b)=>installmentInfo(a,context)!.n-installmentInfo(b,context)!.n||a.id.localeCompare(b.id));
   const anchor=members[0]!,info=installmentInfo(anchor,context)!,numbers=members.map(tx=>installmentInfo(tx,context)!.n),ambiguous=new Set(numbers).size!==numbers.length;

@@ -1,5 +1,7 @@
 # Servidor próprio: do zero à primeira importação
 
+**Veja as configurações no app: [tema claro](funcionalidades-claro.md#integracoes) · [tema escuro](funcionalidades-escuro.md#integracoes).**
+
 Este guia usa o backend deste repositório. A URL configurada no app deve apontar para uma API Financeiro compatível, e não diretamente para a Pluggy. Nenhum passo requer acesso ao servidor do autor.
 
 ## O que você precisa

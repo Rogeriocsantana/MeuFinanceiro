@@ -4,11 +4,15 @@
 
 Aplicativo Android desenvolvido em React Native e TypeScript, com SQLite no aparelho, integração Open Finance via Pluggy e servidor configurável. Reúne contas, cartões, compras compartilhadas, empréstimos, receitas, reservas e análises por categoria.
 
-<p align="center"><img src="docs/media/visao-geral.gif" width="300" alt="Demonstração geral do Financeiro com dados fictícios"></p>
+<p align="center"><img src="docs/media/claro/visao-geral.gif" width="300" alt="Demonstração geral do Financeiro com dados fictícios"></p>
 
-> Demonstração com dados fictícios na prévia web em formato de celular. O GIF reúne telas capturadas, sem operações bancárias reais. O visual no Android pode variar ligeiramente.
+> Demonstração no tema claro com dados fictícios na prévia web em formato de celular. O GIF reúne telas capturadas, sem operações bancárias reais. O visual no Android pode variar ligeiramente.
 
-**[Galeria: 20 áreas com imagem e GIF](docs/funcionalidades.md)** · **[Guia completo do servidor próprio](docs/servidor-proprio.md)** · **[Aplicativo Android](mobile/README.md)** · **[Backend](backend/README.md)**
+**[Galeria completa](docs/funcionalidades.md)** · **[Tema claro](docs/funcionalidades-claro.md)** · **[Tema escuro](docs/funcionalidades-escuro.md)** · **[Guia completo do servidor próprio](docs/servidor-proprio.md)** · **[Aplicativo Android](mobile/README.md)** · **[Backend](backend/README.md)**
+
+## Atualizações do aplicativo
+
+Baixe o APK em [Releases](https://github.com/Rogeriocsantana/MeuFinanceiro/releases). A partir da versão 0.3.38, o aplicativo avisa no topo quando houver uma versão mais nova. Consulte o [guia de atualizações](docs/atualizacoes.md).
 
 ## Por que este projeto existe
 
@@ -39,12 +43,12 @@ O aplicativo diferencia compras, pagamentos de fatura, transferências e recebim
 
 <table>
 <tr><th>Início</th><th>Cartões</th><th>Análises</th></tr>
-<tr><td><img src="docs/media/inicio.jpg" width="250" alt="Resumo financeiro demonstrativo"></td><td><img src="docs/media/cartoes.jpg" width="250" alt="Cartões e fatura demonstrativa"></td><td><img src="docs/media/analises.jpg" width="250" alt="Análises por categoria demonstrativas"></td></tr>
+<tr><td><img src="docs/media/claro/inicio.jpg" width="250" alt="Resumo financeiro demonstrativo"></td><td><img src="docs/media/claro/cartoes.jpg" width="250" alt="Cartões e fatura demonstrativa"></td><td><img src="docs/media/claro/analises.jpg" width="250" alt="Análises por categoria demonstrativas"></td></tr>
 </table>
 
 <table>
 <tr><th>Servidor próprio</th><th>Importações</th><th>Preferências</th></tr>
-<tr><td><img src="docs/media/integracoes.gif" width="250" alt="Configuração do servidor e sincronização"></td><td><img src="docs/media/importacoes.gif" width="250" alt="Opções de importação bancária"></td><td><img src="docs/media/perfil.gif" width="250" alt="Perfil e opções de atualização"></td></tr>
+<tr><td><img src="docs/media/claro/integracoes.gif" width="250" alt="Configuração do servidor e sincronização"></td><td><img src="docs/media/claro/importacoes.gif" width="250" alt="Opções de importação bancária"></td><td><img src="docs/media/claro/perfil.gif" width="250" alt="Perfil e opções de atualização"></td></tr>
 </table>
 
 Na [galeria completa](docs/funcionalidades.md), cada área tem sua imagem, GIF, caminho de acesso e explicação. Inclui classificação e divisão de compras, filtros da fatura, planejamento, categorias, regras, temas e notificações.
@@ -193,3 +197,4 @@ Veja [SECURITY.md](SECURITY.md) antes de implantar ou compartilhar dados de diag
 Projeto pessoal de Rogério Santana. React Native, Expo, TypeScript e SQLite formam a base do aplicativo; Pluggy fornece a integração de dados bancários autorizados. O projeto não é um aplicativo oficial dos bancos exibidos.
 
 Logos pertencem às respectivas instituições. Proveniência em [mobile/assets/banks/SOURCES.md](mobile/assets/banks/SOURCES.md). Não há licença de redistribuição definida nesta entrega.
+

@@ -29,6 +29,7 @@ export function reserveYieldRecords(records:BankRecord[]){
    const amountCents=after.amountCents-before.amountCents-flows;
    // Cross-month gaps cannot be assigned to a month without a closing position.
    const monthly=before.date.slice(0,7)===after.date.slice(0,7)||before.date===new Date(Date.UTC(Number(after.date.slice(0,4)),Number(after.date.slice(5,7))-1,0)).toISOString().slice(0,10);
+   if(amountCents===0&&monthly&&!incomplete&&!unresolved)continue;
    result.push({...after,id:'reserve-yield:'+before.id+'>'+after.id,kind:'transaction',name:'Rendimento · '+(movementName||after.name),amountCents,date:after.date,status:monthly&&!incomplete&&!unresolved&&amountCents>=0?'POSTED':'PENDING',metadata:{reserveYield:true,reserveKey:after.metadata.reserveKey,reserveName:movementName||after.name,card:false,from:start,to:end,reason:incomplete?'Amplie a importação até a posição inicial':unresolved?'Associe o nome dos movimentos do cofrinho':!monthly?'Falta posição de fechamento mensal':amountCents<0?'Conferir posições e movimentos':'',sourceId:after.id}});
   }
  }

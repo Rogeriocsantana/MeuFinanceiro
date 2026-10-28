@@ -64,7 +64,7 @@ test('lembretes respeitam opções, quitação, vencimentos e chaves estáveis',
   const now=new Date('2026-10-01T12:00:00Z');assert.deepEqual(notificationPlan(data,[loan],preferences,now),[]);
   preferences.notifications={enabled:true,types:['invoice-due','loan-due','bank-updated']};
   const plan=notificationPlan(data,[loan],preferences,now);assert.equal(plan.length,3);assert.equal(new Set(plan.map(e=>e.id)).size,3);assert.deepEqual(notificationPlan(data,[loan],preferences,now).map(e=>e.id),plan.map(e=>e.id));assert.equal(plan[0].at.toISOString(),'2026-10-10T12:00:00.000Z');
-  const paid=[{id:'paid-bill',type:'reconciliations',controlId:'bill2',amountCents:10000,direction:'bill-payment'},{id:'paid-loan',type:'reconciliations',controlId:'loan',amountCents:20000,direction:'receipt'}];assert.deepEqual(notificationPlan(data,[loan,...paid],preferences,now),[]);
+  const paid=[{id:'paid-bill',type:'reconciliations',date:'2026-10-01',controlId:'bill2',amountCents:10000,direction:'bill-payment'},{id:'paid-loan',type:'reconciliations',controlId:'loan',amountCents:20000,direction:'receipt'}];assert.deepEqual(notificationPlan(data,[loan,...paid],preferences,now),[]);
   preferences.notifications.types=['bank-updated'];assert.deepEqual(notificationPlan(data,[loan],preferences,now),[]);
  }finally{f.db.close();}
 });
@@ -78,4 +78,90 @@ test('nome pertence à compra inteira com horários diferentes, decisões antiga
 
 test('escolha explícita de dono resolve decisões antigas diferentes da mesma compra',async()=>{
  const f=fixture();try{await seed(f);await f.controls.saveControl(scope,{id:'bea',type:'people',name:'Bea'});const saved=await f.purchases.savePurchaseSeries(scope,'tx1',{ownerId:'ana',label:'Compra'});const duplicate={...saved.series,id:'old-owner',sourceTransactionId:'tx2',ownerId:'bea'};f.db.prepare('INSERT INTO entity_records VALUES(?,?,?,?,?,?)').run('purchase-series',duplicate.id,JSON.stringify(duplicate),1,'now',null);let d=await f.bank.loadBankData();await f.bank.saveBankAnnotation(scope,'tx2',{...d.annotations.tx2,personId:'bea',personName:'Bea',seriesOwnerId:'bea',shares:d.annotations.tx2.shares.map(s=>({...s,person:'Bea'}))});await f.purchases.savePurchaseSeries(scope,'tx1',{ownerId:'ana'});d=await f.bank.loadBankData();for(const id of ['tx1','tx2']){assert.equal(d.annotations[id].personId,'ana');assert.equal(d.annotations[id].shares.length,1);assert.equal(d.annotations[id].shares[0].person,'Ana');}const decisions=(await f.controls.listControls()).filter(c=>c.type==='purchase-series');assert.ok(decisions.every(c=>c.ownerId==='ana'));assert.equal((await f.purchases.applySavedPurchaseSeries(scope)).conflicts.length,0);}finally{f.db.close();}
+});
+
+test('parcelas já classificadas acompanham o vencimento oficial de cada mês sem congelar o dia inicial',async()=>{
+ const f=fixture();try{
+  const b1={...bill(1),date:'2026-09-13'},b2={...bill(2),date:'2026-10-13'};
+  await f.bank.applyBankSnapshot(snapshot([tx(1),tx(2),b1,b2]));await f.controls.saveControl(scope,person);await f.purchases.savePurchaseSeries(scope,'tx1',{ownerId:'ana',dueDay:13});
+  let data=await f.bank.loadBankData();const ids=[data.annotations.tx1.shares[0].id,data.annotations.tx2.shares[0].id];assert.equal(data.annotations.tx2.shares[0].dueDate,'2026-10-13');
+  await f.bank.applyBankSnapshot(snapshot([tx(1),tx(2),b1,{...b2,date:'2026-10-15'}]));await f.purchases.applySavedPurchaseSeries(scope);data=await f.bank.loadBankData();
+  assert.equal(data.annotations.tx1.shares[0].dueDate,'2026-09-13');assert.equal(data.annotations.tx2.shares[0].dueDate,'2026-10-15');assert.deepEqual([data.annotations.tx1.shares[0].id,data.annotations.tx2.shares[0].id],ids);assert.equal(data.annotations.tx2.shares[0].amount,'100,00');assert.equal((await f.purchases.applySavedPurchaseSeries(scope)).changed,0);
+ }finally{f.db.close();}
+});
+test('reparo de parcelas antigas conserva rateios, vínculos, pagamentos e dados bancários',async()=>{
+ const f=fixture();try{
+  await f.bank.applyBankSnapshot(snapshot([tx(2),{...bill(2),date:'2026-10-28'}]));const note={nature:'Despesa',categoryId:'sites',notes:'Conferido',links:{receipt:'paid'},shares:[{id:'s1',person:'Ana',amount:'50,00',dueDate:'2026-10-13'},{id:'s2',person:'Bea',amount:'50,00',dueDate:'2026-10-13'}]};await f.bank.saveBankAnnotation(scope,'tx2',note);
+  const receipt={id:'receipt',type:'reconciliations',controlId:'share:tx2:s1',bankRecordId:'pix',direction:'receipt',amountCents:4000,date:'2026-10-20'};f.db.prepare('INSERT INTO entity_records VALUES(?,?,?,?,?,?)').run('reconciliations',receipt.id,JSON.stringify(receipt),1,'now',null);
+  const before=await f.bank.loadBankData(),controlsBefore=JSON.stringify(await f.controls.listControls());assert.equal((await f.purchases.alignInstallmentDueDates(scope)).changed,1);const after=await f.bank.loadBankData();
+  assert.equal(JSON.stringify(after.records),JSON.stringify(before.records));assert.equal(JSON.stringify(await f.controls.listControls()),controlsBefore);assert.deepEqual(after.annotations.tx2,{...note,shares:note.shares.map(s=>({...s,dueDate:'2026-10-28'}))});const obligation=f.controls.deriveObligations(after,await f.controls.listControls()).find(c=>c.id==='share:tx2:s1');assert.equal(f.controls.controlBalance(obligation,[receipt]).pendingCents,1000);assert.equal((await f.purchases.alignInstallmentDueDates(scope)).changed,0);
+ }finally{f.db.close();}
+});
+test('classificar a âncora não restaura vencimento antigo sobre a fatura do mês',async()=>{
+ const f=fixture();try{
+  await f.bank.applyBankSnapshot(snapshot([tx(1),tx(2),bill(1),{...bill(2),date:'2026-10-20'}]));const share={id:'custom-share',person:'Ana',amount:'100,00',dueDate:'2026-10-13'};
+  await f.purchases.savePurchaseSeries(scope,'tx2',{classification:{nature:'Despesa',categoryId:'sites'},anchorAnnotation:{notes:'Minha nota',shares:[share]}});const data=await f.bank.loadBankData();assert.deepEqual(data.annotations.tx2.shares,[{...share,dueDate:'2026-10-20'}]);assert.equal(data.annotations.tx2.notes,'Minha nota');
+ }finally{f.db.close();}
+});
+test('sem fatura mensal não inventa reparo; respeita data específica e ambiguidade do cartão',async()=>{
+ const f=fixture();try{
+  await f.bank.applyBankSnapshot(snapshot([tx(2),bill(1)]));const note={shares:[{id:'manual',person:'Ana',amount:'100,00',dueDate:'2026-10-13'}]};await f.bank.saveBankAnnotation(scope,'tx2',note);assert.equal((await f.purchases.alignInstallmentDueDates(scope)).changed,0);
+  await f.controls.saveControl(scope,{id:'settings',type:'card-settings',name:'Cartão',accountId:'card',itemId:'item',dueDay:13,'dueDate:2026-10':'2026-10-22'});assert.equal((await f.purchases.alignInstallmentDueDates(scope)).changed,1);assert.equal((await f.bank.loadBankData()).annotations.tx2.shares[0].dueDate,'2026-10-22');
+ }finally{f.db.close();}
+});
+
+
+test('lembrete usa quitação oficial, crédito no cartão e conciliação sem somar fontes duplicadas',()=>{
+ const f=fixture();try{
+  const {notificationPlan}=f.load('src/data/notificationPlan.ts'),preferences=f.prefs.defaultAppPreferences();preferences.notifications={enabled:true,types:['invoice-due']};
+  const now=new Date('2026-10-01T12:00:00Z'),b=bill(2),run=(records,controls=[])=>notificationPlan(snapshot(records),controls,preferences,now);
+  assert.equal(run([b]).length,1);
+  assert.equal(run([{...b,metadata:{payments:[{id:'official',date:'2026-10-01',amountCents:10000}]}}]).length,0);
+  const credit={...tx(2),id:'credit',date:'2026-10-01',amountCents:10000,name:'PAGAMENTO FATURA',metadata:{card:true,billId:b.id,operationType:'CREDIT_CARD_PAYMENT'}};
+  assert.equal(run([b,credit]).length,0);
+  const manual={id:'manual',type:'reconciliations',controlId:b.id,date:'2026-10-01',direction:'bill-payment',amountCents:10000};assert.equal(run([b],[manual]).length,0);
+  const half={...b,metadata:{payments:[{id:'half',date:'2026-10-01',amountCents:5000}]}};
+  assert.equal(run([half,{...credit,amountCents:5000}],[{...manual,amountCents:5000}]).length,1);
+  assert.equal(run([{...b,metadata:{payments:[{date:'2026-10-02',amountCents:10000}]}}]).length,1);
+  assert.equal(run([b,{...credit,itemId:'other-bank'}]).length,1);
+  assert.equal(run([b,{...credit,metadata:{...credit.metadata,operationType:'REFUND'}}]).length,1);
+  const midnight=new Date('2026-10-02T01:00:00Z');assert.equal(notificationPlan(snapshot([{...b,metadata:{payments:[{date:'2026-10-02',amountCents:10000}]}}]),[],preferences,midnight).length,1);
+ }finally{f.db.close();}
+});
+
+
+test('arredondamento inicial mantém uma compra única, previsão única e decisão da série ao editar parcela seguinte',async()=>{
+ const f=fixture();try{
+  const first=tx(1,{name:'JIM.COM NETTO VENA01/12',amountCents:-66674,date:'2026-10-24',invoiceMonth:'2026-11',metadata:{card:true,installmentNumber:1,totalInstallments:12,purchaseDate:'2026-10-24T12:00:00Z'}}),second={...first,id:'tx2',name:'JIM.COM NETTO VENA02/12',amountCents:-66666,date:'2026-12-03',invoiceMonth:'2026-12',status:'PENDING',metadata:{...first.metadata,installmentNumber:2}},b={...bill(2),id:'b-nov',date:'2026-11-13'};
+  await f.bank.applyBankSnapshot(snapshot([first,second,b]));await f.controls.saveControl(scope,person);const rowsBefore=JSON.stringify((await f.bank.loadBankData()).records);
+  const a=await f.purchases.savePurchaseSeries(scope,'tx1',{ownerId:'ana',classification:{nature:'Despesa',categoryId:'shopping'},label:'Compra de móveis'});let d=await f.bank.loadBankData();assert.equal(d.annotations.tx2.categoryId,'shopping');assert.equal(d.annotations.tx2.shares[0].amount,'666,66');assert.equal(d.annotations.tx2.shares[0].dueDate,'2026-12-13');assert.equal(JSON.stringify(d.records),rowsBefore);
+  const bSave=await f.purchases.savePurchaseSeries(scope,'tx2',{label:'Móveis'});assert.equal(bSave.series.id,a.series.id);assert.equal((await f.controls.listControls()).filter(c=>c.type==='purchase-series').length,1);
+  d=await f.bank.loadBankData();const family=f.load('src/data/purchaseSeries.ts').installmentPurchases(d);assert.equal(family.length,1);assert.equal(family[0].importedInstallments,2);assert.equal(family[0].importedTotalCents,133340);
+  const forecast=f.load('src/data/installmentForecast.ts').installmentForecastRows;assert.equal(forecast(d,'2026-12').length,0);const jan=forecast(d,'2027-01');assert.equal(jan.length,1);assert.equal(jan[0].metadata.installmentNumber,3);assert.equal(jan[0].amountCents,-66666);
+ }finally{f.db.close();}
+});
+
+
+test('vencimento da fatura exige data do próprio mês e não é deduzido pelo histórico ou dia cadastrado',()=>{
+ const f=fixture();try{
+ const {cardBillingDates}=f.load('src/data/cardInvoice.ts'),{installmentDueDate}=f.load('src/data/installmentContinuity.ts');
+ const card={...tx(1),id:'card-record',kind:'card',metadata:{dueDate:'2026-10-13'}},bills=['2026-07-10','2026-08-10','2026-09-10','2026-10-13'].map((date,i)=>({...bill(1),id:'bill-'+i,date,metadata:{closingDate:date.slice(0,7)+'-03'}})),d=snapshot([card,...bills]);
+ assert.equal(cardBillingDates(d,card,'2026-10').due,'2026-10-13');assert.equal(cardBillingDates(d,card,'2026-11').due,'');assert.equal(cardBillingDates(d,card,'2026-12').due,'');assert.equal(installmentDueDate(tx(1),'2026-11',d,[],true),undefined);
+ assert.equal(cardBillingDates(d,card,'2026-11',[{id:'s',type:'card-settings',accountId:'card',dueDay:15}]).due,'');
+ assert.equal(cardBillingDates(d,card,'2026-11',[{id:'s',type:'card-settings',accountId:'card','dueDate:2026-11':'2026-11-12'}]).due,'2026-11-12');
+ const official={...bill(1),id:'official',date:'2026-11-16'};assert.equal(cardBillingDates(snapshot([...d.records,official]),card,'2026-11').due,'2026-11-16');
+ const onlyLast=snapshot([card,bills[3]]);assert.equal(cardBillingDates(onlyLast,card,'2026-11').due,'');
+ const current={...card,metadata:{dueDate:'2026-11-17'}};assert.equal(cardBillingDates(snapshot([current,...bills]),current,'2026-11').due,'2026-11-17');
+ }finally{f.db.close();}
+});
+
+
+test('novos lançamentos persistem por importação sem confundir atualização com inserção ou alterar valores',async()=>{
+ const f=fixture();try{const state=f.load('src/data/insightState.ts');await seed(f);let current=await state.loadInsightState(scope);assert.deepEqual(current.ids.sort(),['tx1','tx2']);await state.saveInsightState(scope,{reviewed:true});const before=JSON.stringify((await f.bank.loadBankData()).records);await f.bank.applyBankSnapshot(snapshot([tx(1),tx(2)]));assert.equal((await state.loadInsightState(scope)).reviewed,true);assert.equal(JSON.stringify((await f.bank.loadBankData()).records),before);await f.bank.applyBankSnapshot(snapshot([tx(3)]));current=await state.loadInsightState(scope);assert.deepEqual(current.ids,['tx3']);assert.equal(current.reviewed,false);await assert.rejects(state.saveInsightState('other',{reviewed:true}),/conexão/);}finally{f.db.close();}
+});
+test('recorrência usa vínculo explícito para substituir previsão sem criar despesa ou confirmar por valor parecido',()=>{
+ const f=fixture();try{const {recurringMonth}=f.load('src/data/recurringInsights.ts'),r=tx(1,{accountId:'account',date:'2026-10-20',amountCents:-12600}),c={id:'light',type:'recurrences',name:'Luz',accountId:'account',day:31,amountCents:12000,variable:true},d=snapshot([r]),before=JSON.stringify(d);assert.equal(recurringMonth(d,[c],'2026-10')[0].confirmed,false);const linked={...c,linkedTransactions:{'2026-10':r.id}};assert.equal(recurringMonth(d,[linked],'2026-10')[0].value,12600);assert.equal(recurringMonth(d,[linked],'2026-11')[0].confirmed,false);assert.equal(recurringMonth(d,[linked],'2026-11')[0].date,'2026-11-30');assert.equal(recurringMonth(d,[{...linked,accountId:'foreign'}],'2026-10')[0].confirmed,false);assert.equal(JSON.stringify(d),before);}finally{f.db.close();}
+});
+test('alertas reutilizam limite e gasto próprio, exigem ativação por categoria e limitam a repetição',()=>{
+ const f=fixture();try{const {controlAlertEvents}=f.load('src/data/controlAlerts.ts'),categories=f.load('src/data/settingsModel.ts').resolveCategories([]),category=categories.find(c=>c.name==='Delivery'),r=tx(2,{amountCents:-9000}),d={...snapshot([r]),annotations:{tx2:{nature:'Despesa',categoryId:category.id}}},setting={id:'monthly-limits',type:'settings',name:'Limites',limits:{Delivery:'100,00'},controlAlerts:{Delivery:true},alertThreshold:'80%'};const events=controlAlertEvents(d,[setting],'2026-10-28');assert.equal(events.length,1);assert.equal(events[0].percent,90);assert.equal(controlAlertEvents(d,[{...setting,controlAlerts:{}}],'2026-10-28').length,0);assert.equal(controlAlertEvents({...d,annotations:{tx2:{...d.annotations.tx2,shares:[{person:'Ana',amount:'90,00',dueDate:'2026-10-10'}]}}},[setting],'2026-10-28').length,0);assert.notEqual(events[0].key,controlAlertEvents(d,[setting],'2026-10-29')[0].key);const band={...setting,alertFrequency:'Só quando mudar de faixa'};assert.equal(controlAlertEvents(d,[band],'2026-10-28')[0].key,controlAlertEvents(d,[band],'2026-10-29')[0].key);}finally{f.db.close();}
 });

@@ -1,3 +1,6 @@
+import {controlAlertEvents} from '../data/controlAlerts';
+import {loadInsightState} from '../data/insightState';
+import {providerDay} from '../data/pluggyModel';
 import {Linking,Platform} from 'react-native';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
@@ -17,7 +20,7 @@ export async function configureNotifications(enabled:boolean){
 export async function scheduleFinancialNotifications(data:LocalBankData){
  if(Platform.OS==='web')return;
  const preferences=await loadAppPreferences(data.scope),prefix=notificationPrefix(data.scope);
- const desired=notificationPlan(data,await listControls(),preferences),scheduled=await Notifications.getAllScheduledNotificationsAsync();
+ const controls=await listControls(),desired=notificationPlan(data,controls,preferences),scheduled=await Notifications.getAllScheduledNotificationsAsync();
  for(const old of scheduled.filter(r=>r.identifier.startsWith(prefix)))if(!desired.some(e=>e.id===old.identifier))await Notifications.cancelScheduledNotificationAsync(old.identifier);
  if(!preferences.notifications.enabled)return;
  if(!(await Notifications.getPermissionsAsync()).granted)return;
@@ -27,6 +30,7 @@ export async function scheduleFinancialNotifications(data:LocalBankData){
   if(old)await Notifications.cancelScheduledNotificationAsync(old.identifier);
   await Notifications.scheduleNotificationAsync({identifier:event.id,content:{title:event.title,body:event.body,data:{page:event.page,name:event.name||'',scheduledAt:event.at.toISOString()}},trigger:{type:Notifications.SchedulableTriggerInputTypes.DATE,date:event.at,channelId:channel}});
  }
+ for(const alert of controlAlertEvents(data,controls,providerDay(new Date().toISOString()))){const id=prefix+'limit-'+alert.key;if(!await recordDeviceEvent(data.scope,id,{at:new Date().toISOString()}))continue;await Notifications.scheduleNotificationAsync({identifier:id,content:{title:alert.name+' atingiu '+alert.percent+'% do limite',body:'Toque para conferir seus gastos nesta categoria.',data:{page:'category',name:JSON.stringify({category:alert.name,month:alert.month})}},trigger:null});}
 }
 export function openNotificationSettings(){return Platform.OS==='android'?Linking.sendIntent('android.settings.APP_NOTIFICATION_SETTINGS',[{key:'android.provider.extra.APP_PACKAGE',value:Constants.appOwnership==='expo'?'host.exp.exponent':Constants.expoConfig?.android?.package||'com.roger.financeiro'}]):Linking.openSettings();}
 export async function notifyBankUpdated(data:LocalBankData,changed:number){
@@ -35,11 +39,11 @@ export async function notifyBankUpdated(data:LocalBankData,changed:number){
  if(!preferences.notifications.enabled||!preferences.notifications.types.includes('bank-updated')||!(await Notifications.getPermissionsAsync()).granted)return;
  const stamp=data.records.filter(r=>r.kind==='account'||r.kind==='card').map(r=>r.id+':'+(r.metadata.sourceUpdatedAt||data.syncedAt)).sort().join('|'),id=notificationPrefix(data.scope+stamp)+'bank-updated';
  if(!await recordDeviceEvent(data.scope,id,{status:'scheduled',at:new Date().toISOString()}))return;
- await Notifications.scheduleNotificationAsync({identifier:id,content:{title:'Dados bancários atualizados',body:'Suas contas foram atualizadas no Financeiro.',data:{page:'home'}},trigger:null});
+ const batch=await loadInsightState(data.scope),count=batch.reviewed?0:batch.ids.length;await Notifications.scheduleNotificationAsync({identifier:id,content:{title:count?count+' novos lançamentos':'Dados bancários atualizados',body:count?'Toque para revisar os movimentos importados.':'Suas contas foram atualizadas no Financeiro.',data:{page:count?'new-transactions':'home'}},trigger:null});
 }
 export function onNotificationOpen(navigate:(page:string,name?:string)=>void){
  if(Platform.OS==='web')return()=>{};
- const visit=(response:Notifications.NotificationResponse)=>{const {page,name}=response.notification.request.content.data;if(typeof page==='string'&&['home','cards','loan'].includes(page)){navigate(page,typeof name==='string'?name:undefined);Notifications.clearLastNotificationResponse();}};
+ const visit=(response:Notifications.NotificationResponse)=>{const {page,name}=response.notification.request.content.data;if(typeof page==='string'&&['home','cards','loan','category','new-transactions','recurring-overview'].includes(page)){navigate(page,typeof name==='string'?name:undefined);Notifications.clearLastNotificationResponse();}};
  const listener=Notifications.addNotificationResponseReceivedListener(visit);
  void Notifications.getLastNotificationResponseAsync().then(result=>{if(result)visit(result);}).catch(()=>{});
  return()=>listener.remove();

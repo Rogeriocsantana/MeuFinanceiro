@@ -2,17 +2,18 @@
   "expo": {
     "name": "Financeiro",
     "slug": "financeiro-mobile",
-    "version": "0.3.34",
+    "version": "0.3.38",
     "scheme": "financeiro",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "android": {
       "package": "com.roger.financeiro",
       "allowBackup": false,
-      "versionCode": 35,
+      "versionCode": 39,
       "permissions": [
         "android.permission.INTERNET",
-        "android.permission.ACCESS_NETWORK_STATE"
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.VIBRATE"
       ],
       "blockedPermissions": [
         "android.permission.RECORD_AUDIO",
@@ -51,7 +52,8 @@
           "cameraPermission": false,
           "microphonePermission": false
         }
-      ]
+      ],
+      "./plugins/withAppUpdater"
     ],
     "icon": "./assets/icon.png",
     "extra": {

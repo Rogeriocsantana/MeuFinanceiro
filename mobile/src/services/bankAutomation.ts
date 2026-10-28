@@ -11,14 +11,21 @@ const TASK='financeiro-bank-refresh';
 const runners=new Map<string,()=>Promise<boolean>>();
 export async function runAutomaticRefresh(scope:string){
  if(__DEV__&&(scope==='parity-review'||scope==='previsual-native-validation'||process.env.EXPO_PUBLIC_ISOLATED_BANK_VALIDATION==='1'))return false;
- if(!runners.has(scope))runners.set(scope,automaticRefreshRunner({load:async()=>({preferences:await loadAppPreferences(scope),state:await loadRefreshState(scope)}),save:state=>saveRefreshState(scope,state),synchronize:async()=>{const result=await synchronizePluggy();try{await synchronizeRemote();}catch{}const data=await loadBankData();if(data)await Promise.allSettled([scheduleFinancialNotifications(data),notifyBankUpdated(data,result.changed)]);}}));
+ if(!runners.has(scope))runners.set(scope,automaticRefreshRunner({load:async()=>({preferences:await loadAppPreferences(scope),state:await loadRefreshState(scope),latestImportAt:(await loadBankData())?.syncedAt}),save:state=>saveRefreshState(scope,state),synchronize:async()=>{const result=await synchronizePluggy();try{await synchronizeRemote();}catch{}const data=await loadBankData();if(data)await Promise.allSettled([scheduleFinancialNotifications(data),notifyBankUpdated(data,result.changed)]);}}));
  return runners.get(scope)!();
 }
 if(Platform.OS!=='web'&&!TaskManager.isTaskDefined(TASK))TaskManager.defineTask(TASK,async()=>{
  try{const data=await loadBankData();if(data)await runAutomaticRefresh(data.scope);return BackgroundTask.BackgroundTaskResult.Success;}catch{return BackgroundTask.BackgroundTaskResult.Failed;}
 });
-export async function configureAutomaticRefresh(scope:string,intervalMinutes:number|null){
- if(Platform.OS==='web')return;
- if(intervalMinutes===null){if(await TaskManager.isTaskRegisteredAsync(TASK))await BackgroundTask.unregisterTaskAsync(TASK);return;}
- if(await TaskManager.isAvailableAsync())await BackgroundTask.registerTaskAsync(TASK,{minimumInterval:intervalMinutes});
+let configuring:Promise<void>=Promise.resolve();
+export function configureAutomaticRefresh(scope:string,intervalMinutes:number|null){
+ const update=async()=>{
+  if(Platform.OS==='web')return;
+  const registered=await TaskManager.isTaskRegisteredAsync(TASK);
+  if(intervalMinutes===null){if(registered)await BackgroundTask.unregisterTaskAsync(TASK);return;}
+  if(registered){const options=await TaskManager.getTaskOptionsAsync<{minimumInterval?:number}>(TASK);if(options?.minimumInterval===intervalMinutes)return;}
+  if(!await TaskManager.isAvailableAsync())throw Error('Atualização em segundo plano indisponível neste aparelho. A verificação ao abrir o app continua ativa.');
+  await BackgroundTask.registerTaskAsync(TASK,{minimumInterval:intervalMinutes});
+ };
+ const work=configuring.catch(()=>{}).then(update);configuring=work;return work;
 }

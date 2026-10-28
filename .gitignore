@@ -5,11 +5,14 @@
 !/docs/
 /docs/*
 !/docs/servidor-proprio.md
+!/docs/atualizacoes.md
 !/docs/funcionalidades.md
+!/docs/funcionalidades-claro.md
+!/docs/funcionalidades-escuro.md
 !/docs/media/
 /docs/media/*
-!/docs/media/*.jpg
-!/docs/media/*.gif
+!/docs/media/claro/
+!/docs/media/escuro/
 !/docs/media/README.md
 !/SECURITY.md
 !/scripts/

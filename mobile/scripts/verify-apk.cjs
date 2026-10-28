@@ -10,7 +10,7 @@ const manifest=run(path.join(tools,'aapt.exe'),['dump','xmltree',apk,'AndroidMan
 if(!badging.includes("name='com.roger.financeiro'"))throw Error('Identidade do APK inesperada.');
 const app=JSON.parse(fs.readFileSync(path.join(root,'app.json'),'utf8')).expo;
 if(!badging.includes("versionName='"+app.version+"'")||!badging.includes("versionCode='"+app.android.versionCode+"'"))throw Error('Versão do APK divergente.');
-for(const permission of ['POST_NOTIFICATIONS','RECEIVE_BOOT_COMPLETED','WAKE_LOCK'])if(!badging.includes("name='android.permission."+permission+"'"))throw Error('Permissão necessária ausente: '+permission);
+for(const permission of ['POST_NOTIFICATIONS','RECEIVE_BOOT_COMPLETED','WAKE_LOCK','VIBRATE','REQUEST_INSTALL_PACKAGES'])if(!badging.includes("name='android.permission."+permission+"'"))throw Error('Permissão necessária ausente: '+permission);
 for(const component of ['expo.modules.notifications','androidx.work.impl.background.systemjob.SystemJobService'])if(!manifest.includes(component))throw Error('Componente nativo necessário ausente: '+component);
 if(/application-debuggable/.test(badging))throw Error('APK está marcado como depurável.');
 for(const permission of ['RECORD_AUDIO','SYSTEM_ALERT_WINDOW','READ_EXTERNAL_STORAGE','WRITE_EXTERNAL_STORAGE'])if(badging.includes("name='android.permission."+permission+"'"))throw Error('Permissão indevida: '+permission);
@@ -24,5 +24,7 @@ if(certificate.status!==0)throw Error('Não foi possível conferir a chave origi
 const expected=new crypto.X509Certificate(certificate.stdout).fingerprint256.replaceAll(':','').toLowerCase();if(expected!==fingerprint.toLowerCase())throw Error('APK não usa a assinatura original.');
 const bytes=fs.readFileSync(apk),evidence={apk,bytes:bytes.length,sha256:crypto.createHash('sha256').update(bytes).digest('hex'),certificateSha256:fingerprint,package:'com.roger.financeiro',architecture:'arm64-v8a',release:true,allowBackup:false,cleartext:false,signatureVerified:true,verifiedAt:new Date().toISOString()};
 fs.writeFileSync(apk+'.verification.json',JSON.stringify(evidence,null,2));console.log(JSON.stringify(evidence));
+
+
 
 

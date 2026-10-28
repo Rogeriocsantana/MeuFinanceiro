@@ -8,3 +8,13 @@ test('compras indistinguíveis e âncoras divergentes exigem revisão',()=>{cons
 test('vencimento só da fatura real ou dia configurado, com limite do calendário',()=>{const noDue=run(data([tx(1),tx(2)]),[person]);assert.equal(noDue.changes.length,0);assert.match(noDue.conflicts[0].reason,/Vencimento/);const configured=run(data([tx(1),tx(2)]),[person,{id:'settings',type:'card-settings',accountId:'card',dueDay:31}]);assert.equal(configured.changes[0].annotation.shares[0].dueDate,'2026-10-31');const ambiguous=run(data([tx(1),tx(2),bill(2),{...bill(2),id:'duplicate-bill'}]),[person]);assert.equal(ambiguous.changes.length,0);assert.match(ambiguous.conflicts[0].reason,/Vencimento/);});
 
 test('parcela usa automaticamente o vencimento da fatura vizinha do mesmo cartão',()=>{const result=run(data([tx(1),tx(2),bill(3)]),[person]);assert.equal(result.conflicts.length,0);assert.equal(result.changes[0].annotation.shares[0].dueDate,'2026-10-10');const foreign=run(data([tx(1),tx(2),{...bill(3),accountId:'other'}]),[person]);assert.equal(foreign.changes.length,0);});
+
+
+test('primeira parcela absorve oito centavos do parcelamento em 12 vezes sem perder categoria e pessoa',()=>{
+ const installments=[1,2].map(n=>tx(n,{name:'JIM.COM NETTO VENA0'+n+'/12',amountCents:n===1?-66674:-66666,invoiceMonth:n===1?'2026-11':'2026-12',metadata:{card:true,installmentNumber:n,totalInstallments:12,purchaseDate:'2026-10-24T12:00:00Z'}}));
+ const notes={tx1:{...note,shares:[{...note.shares[0],amount:'666,74',dueDate:'2026-11-13'}]}},invoice={...bill(2),date:'2026-12-13'},source=data([...installments,invoice],notes),before=JSON.stringify(source),result=run(source,[person]);
+ assert.equal(result.changes.length,1);const change=result.changes[0];assert.equal(change.id,'tx2');assert.equal(change.annotation.categoryId,'shopping');assert.equal(change.annotation.personId,'ana');assert.equal(change.annotation.shares[0].amount,'666,66');assert.equal(change.annotation.shares[0].dueDate,'2026-12-13');assert.equal(JSON.stringify(source),before);
+ assert.deepEqual(run({...source,annotations:{...notes,tx2:change.annotation}},[person]),{changes:[],conflicts:[]});
+ const tooDifferent=data([{...installments[0],amountCents:-66678},installments[1],invoice],{tx1:{...note,shares:[{...note.shares[0],amount:'666,78'}]}});assert.equal(run(tooDifferent,[person]).changes.length,0);
+ const later=[{...installments[0],metadata:{...installments[0].metadata,installmentNumber:2}},{...installments[1],metadata:{...installments[1].metadata,installmentNumber:3}}];assert.equal(run(data([...later,invoice],notes),[person]).changes.length,0);
+});

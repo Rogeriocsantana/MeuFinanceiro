@@ -1,0 +1,7 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript');
+const m={exports:{}};new Function('exports','module',ts.transpileModule(fs.readFileSync('src/services/appRelease.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(m.exports,m);
+const {parseRelease}=m.exports;
+const manifest={packageName:'com.roger.financeiro',version:'0.3.39',versionCode:40,apkAssetName:'financeiro.apk',size:100,sha256:'a'.repeat(64)};
+const release={assets:[{name:'financeiro.apk',size:100,browser_download_url:'https://github.com/Rogeriocsantana/MeuFinanceiro/releases/download/v0.3.39/financeiro.apk'}]};
+test('atualização exige versão maior e identidade correta',()=>{assert.equal(parseRelease(release,manifest,39).versionCode,40);assert.equal(parseRelease(release,manifest,40),null);assert.equal(parseRelease(release,{...manifest,packageName:'outro'},39),null);assert.equal(parseRelease({...release,prerelease:true},manifest,39),null);});
+test('atualização rejeita origem externa, tamanho e digest inválidos',()=>{assert.throws(()=>parseRelease({...release,assets:[{...release.assets[0],browser_download_url:'https://example.com/a.apk'}]},manifest,39));assert.throws(()=>parseRelease(release,{...manifest,size:99},39));assert.throws(()=>parseRelease(release,{...manifest,sha256:'x'.repeat(64)},39));});

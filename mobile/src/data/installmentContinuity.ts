@@ -19,17 +19,47 @@ export function installmentInfo(tx:BankRecord,data:LocalBankData){
  const rawPurchase=tx.metadata.purchaseDate||tx.metadata.transactionDateTime,precise=typeof rawPurchase==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(rawPurchase)&&Number.isFinite(Date.parse(rawPurchase))?new Date(rawPurchase).toISOString():null;
  return {n,count,month,merchant,purchaseKey:precise?'purchase:'+installmentPurchaseDay(tx)+'|'+merchant:merchant,cycle:index-n,amount:Math.abs(tx.amountCents)};
 }
-export function installmentDueDate(tx:BankRecord,month:string,data:LocalBankData,controls:Control[]){
- const bills=billsFor(tx,data),exact=tx.metadata.billId?bills.filter(b=>b.metadata.sourceId===tx.metadata.billId||b.id===tx.metadata.billId):bills.filter(b=>b.date.slice(0,7)===month);
- if(exact.length===1&&/^\d{4}-\d{2}-\d{2}$/.test(exact[0]!.date))return exact[0]!.date;
+/** The first installment may carry the cent remainder of all the other installments. */
+export function installmentAmountsCompatible(a:{n:number;count:number;amount:number},b:{n:number;count:number;amount:number}){
+ if(a.count!==b.count||!Number.isSafeInteger(a.amount)||!Number.isSafeInteger(b.amount))return false;
+ const difference=Math.abs(a.amount-b.amount);
+ return difference<=5||((a.n===1)!==(b.n===1))&&difference<=a.count-1;
+}
+export function installmentDueDate(tx:BankRecord,month:string,data:LocalBankData,controls:Control[],officialOnly=false){
+ const bills=billsFor(tx,data),settings=controls.filter(c=>c.type==='card-settings'&&c.accountId===tx.accountId&&(!c.itemId||c.itemId===tx.itemId));
+ const valid=(value:unknown):value is string=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&Number.isFinite(Date.parse(value+'T12:00:00Z'))&&new Date(value+'T12:00:00Z').toISOString().slice(0,10)===value;
+ const overrides=[...new Set(settings.map(c=>c['dueDate:'+month]).filter(value=>valid(value)&&value.slice(0,7)===month))];
+ if(overrides.length===1)return overrides[0] as string;
+ if(overrides.length>1)return undefined;
+ const exact=tx.metadata.billId?bills.filter(b=>b.metadata.sourceId===tx.metadata.billId||b.id===tx.metadata.billId):[];
+ if(exact.length===1&&valid(exact[0]!.date)&&exact[0]!.date.slice(0,7)===month)return exact[0]!.date;
  if(exact.length>1)return undefined;
- const settings=controls.filter(c=>c.type==='card-settings'&&c.accountId===tx.accountId&&(!c.itemId||c.itemId===tx.itemId)),configuredDay=Number(settings.length===1?settings[0]!.dueDay:0);
- const target=monthIndex(month),available=bills.filter(b=>/^\d{4}-\d{2}-\d{2}$/.test(b.date)&&monthIndex(b.date.slice(0,7))!==null).sort((a,b)=>Math.abs(monthIndex(a.date.slice(0,7))!-target!)-Math.abs(monthIndex(b.date.slice(0,7))!-target!));
+ const monthly=bills.filter(b=>b.date.slice(0,7)===month);
+ if(monthly.length===1&&valid(monthly[0]!.date))return monthly[0]!.date;
+ if(monthly.length>1)return undefined;
+ const card=data.records.find(r=>r.kind==='card'&&r.accountId===tx.accountId&&r.itemId===tx.itemId),cardDue=card?.metadata.dueDate;
+ if(valid(cardDue)&&cardDue.slice(0,7)===month)return cardDue;
+ if(officialOnly)return undefined;
+ const configuredDay=Number(settings.length===1?settings[0]!.dueDay:0),target=monthIndex(month);
+ const available=bills.filter(b=>valid(b.date)&&monthIndex(b.date.slice(0,7))!==null).sort((a,b)=>Math.abs(monthIndex(a.date.slice(0,7))!-target!)-Math.abs(monthIndex(b.date.slice(0,7))!-target!));
  const nearest=available[0],distance=nearest&&target!==null?Math.abs(monthIndex(nearest.date.slice(0,7))!-target):null,nearestDays=new Set(available.filter(b=>distance!==null&&Math.abs(monthIndex(b.date.slice(0,7))!-target!)===distance).map(b=>Number(b.date.slice(8,10))));
- const day=configuredDay|| (nearestDays.size===1?Number(nearest!.date.slice(8,10)):0);
- if(!Number.isInteger(day)||day<1||day>31)return undefined;
+ const day=configuredDay||(nearestDays.size===1?Number(nearest!.date.slice(8,10)):0);
+ if(target===null||!Number.isInteger(day)||day<1||day>31)return undefined;
  const [year,m]=month.split('-').map(Number),last=new Date(Date.UTC(year!,m!,0)).getUTCDate();return month+'-'+String(Math.min(day,last)).padStart(2,'0');
 }
+/** Shares follow their own month's bill; keep ids, amounts, people and financial links intact. */
+export function installmentDueDateChanges(data:LocalBankData,controls:Control[]){
+ const changes:{id:string;annotation:LocalAnnotation}[]=[];
+ for(const tx of data.records){
+  const info=installmentInfo(tx,data),note=data.annotations[tx.id];
+  if(!info||!note?.shares?.length||(note as any)._deletedAt)continue;
+  const due=installmentDueDate(tx,info.month,data,controls,true);
+  if(!due||note.shares.every(share=>share.dueDate===due))continue;
+  changes.push({id:tx.id,annotation:{...note,shares:note.shares.map(share=>({...share,dueDate:due}))}});
+ }
+ return changes;
+}
+
 function shareCents(amount:string){return Math.round(Number(amount.replace(/\./g,'').replace(',','.'))*100);}
 function financial(annotation:LocalAnnotation){return !!(annotation.event&&annotation.event!=='Nenhum evento'||annotation.controlId||annotation.links&&Object.keys(annotation.links).length||annotation.compensations?.length||annotation.receiptRemainder||(annotation as any).receiptRounding);}
 
@@ -41,7 +71,7 @@ export function installmentContinuityChanges(data:LocalBankData,controls:Control
   const {tx,info:target}=current,existing=data.annotations[tx.id];
   // Even a category, note, or explicit empty participation list is an existing human decision.
   if(existing&&Object.keys(existing).length)continue;
-  const family=records.filter(candidate=>candidate.tx.accountId===tx.accountId&&candidate.tx.itemId===tx.itemId&&candidate.info.purchaseKey===target.purchaseKey&&candidate.info.count===target.count&&candidate.info.cycle===target.cycle&&Math.abs(candidate.info.amount-target.amount)<=5);
+  const family=records.filter(candidate=>candidate.tx.accountId===tx.accountId&&candidate.tx.itemId===tx.itemId&&candidate.info.purchaseKey===target.purchaseKey&&candidate.info.count===target.count&&candidate.info.cycle===target.cycle&&installmentAmountsCompatible(candidate.info,target));
   const anchors=family.filter(candidate=>candidate.info.n<target.n&&(data.annotations[candidate.tx.id]?.categoryId||data.annotations[candidate.tx.id]?.shares?.length)).map(candidate=>{
    const note=data.annotations[candidate.tx.id]!,shares=note.shares||[],share=shares.length===1&&shareCents(shares[0]!.amount)===candidate.info.amount?shares[0]:undefined;
    const matches=share?people.filter(person=>person.name===share.person&&(!note.personId||note.personId===person.id||note.personId===person.name)):[];

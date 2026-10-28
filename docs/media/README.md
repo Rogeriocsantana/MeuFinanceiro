@@ -1,5 +1,5 @@
-# Origem das imagens
+# Mídia demonstrativa
 
-Capturadas da interface do projeto em prévia web local, com fixture `parity-review` e dados fictícios. Nenhum arquivo do vídeo pessoal, extrato, foto ou credencial de produção foi usado.
+As pastas `claro/` e `escuro/` contêm as mesmas áreas do aplicativo, capturadas na prévia web local em 390 × 844, com dados fictícios da fixture parity-review. Não foram usados extratos, fotos pessoais ou credenciais reais.
 
-JPGs: tela em 390 × 844. Arquivos com sufixo `-2` mostram outra posição ou opção da mesma área. GIFs: sequência desses estados e, quando necessário, do menu de acesso, com pausa de leitura, sem simular gravação contínua. `visao-geral.gif` reúne 11 telas.
+Cada pasta possui imagens JPG e GIFs em sequência de telas. O arquivo visao-geral.gif reúne 11 áreas. A galeria escura preserva a apresentação anterior; a opção Aparência demonstra a alternância de tema. A galeria clara e o README principal apresentam as opções no tema claro.

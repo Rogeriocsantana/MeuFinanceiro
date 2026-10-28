@@ -1,3 +1,5 @@
+import {installmentInfo,installmentAmountsCompatible} from './installmentContinuity';
+import {installmentDueDateChanges} from './installmentContinuity';
 import {Platform} from 'react-native';
 import * as Crypto from 'expo-crypto';
 import {database} from './database';
@@ -30,7 +32,7 @@ export async function savePurchaseSeries(scope:string,transactionId:string,patch
  return atomic(async tx=>{
   const {data,controls}=await read(tx,scope),anchor=data.records.find(r=>r.id===transactionId);
   if(!anchor)throw Error('Compra não encontrada.');
-  const family=purchaseFamily(data,anchor),matches=controls.filter(c=>c.type==='purchase-series'&&c.scope===scope&&(c.identity===family.identity||family.members.some(m=>m.id===c.sourceTransactionId))&&Math.abs(Number(c.anchorAmountCents)-family.info.amount)<=5);
+  const family=purchaseFamily(data,anchor),matches=controls.filter(c=>c.type==='purchase-series'&&c.scope===scope&&(c.identity===family.identity||family.members.some(m=>m.id===c.sourceTransactionId))&&(()=>{const source=data.records.find(r=>r.id===c.sourceTransactionId),info=source&&installmentInfo(source,data);return !!info&&Math.abs(Number(c.anchorAmountCents)-info.amount)<=5&&installmentAmountsCompatible({...info,amount:Number(c.anchorAmountCents)},family.info);})());
   if(matches.length>1&&(patch.ownerId===undefined&&new Set(matches.map(c=>c.ownerId===undefined?'unset':c.ownerId??'self')).size>1||patch.label===undefined&&new Set(matches.map(c=>c.label||'')).size>1))throw Error('A compra tem decisões diferentes de nome ou dono. Confira antes de alterar.');
   const previous=matches[0] as PurchaseSeries|undefined;
   if(patch.ownerId!==undefined&&patch.ownerId!==null&&(typeof patch.ownerId!=='string'||!patch.ownerId))throw Error('Pessoa inválida.');
@@ -50,6 +52,10 @@ export async function savePurchaseSeries(scope:string,transactionId:string,patch
   // Keep older decisions from previously split groups consistent after the grouping repair.
   for(const duplicate of matches.slice(1)){const updated={...duplicate,label:series.label,identity:family.identity,...(patch.classification?{classification:patch.classification}:{}),...(patch.ownerId!==undefined?{ownerId:patch.ownerId}:{})};const value=JSON.stringify(updated);if(value!==JSON.stringify(duplicate)){await tx.runAsync('UPDATE entity_records SET payload=?,version=version+1,updated_at=? WHERE entity_type=? AND id=?',value,now,'purchase-series',duplicate.id);await queueRemoteEdit(tx,scope,'entities',JSON.stringify(['purchase-series',duplicate.id]),value);}}
   if(patch.anchorAnnotation){const change=plan.changes.find(c=>c.id===anchor.id),annotation={...patch.anchorAnnotation,...(patch.classification||{})};if(change)change.annotation={...change.annotation,...annotation};else plan.changes.push({id:anchor.id,annotation:{...(data.annotations[anchor.id]||{}),...annotation}});}
+  const projected={...data,annotations:{...data.annotations,...Object.fromEntries(plan.changes.map(c=>[c.id,c.annotation]))}};
+  for(const aligned of installmentDueDateChanges(projected,controls)){
+   const planned=plan.changes.find(c=>c.id===aligned.id);if(planned)planned.annotation=aligned.annotation;else plan.changes.push(aligned);
+  }
   for(const change of plan.changes)await writeAnnotation(tx,scope,change.id,change.annotation);
   if(plan.changes.length||!previous||JSON.stringify(previous)!==payload)await tx.runAsync("UPDATE local_meta SET value=value+1 WHERE key='revision'");
   return {series,changed:plan.changes.length};
@@ -69,8 +75,17 @@ export async function applySavedPurchaseSeries(scope:string){return atomic(async
   conflicts.push(...plan.conflicts);
   for(const change of plan.changes){await writeAnnotation(tx,scope,change.id,change.annotation);data.annotations[change.id]=change.annotation;changed++;}
  }
+ for(const change of installmentDueDateChanges(data,controls)){await writeAnnotation(tx,scope,change.id,change.annotation);data.annotations[change.id]=change.annotation;changed++;}
  const meta=await tx.getFirstAsync('SELECT payload FROM pluggy_sync WHERE scope=?',scope);
  if(meta){const state=JSON.parse(meta.payload);state.warnings=[...(state.warnings||[]).filter((w:string)=>!w.startsWith('Compra parcelada para conferir: ')),...new Set(conflicts.map(c=>'Compra parcelada para conferir: '+c.reason))];const payload=JSON.stringify(state);if(payload!==meta.payload){await tx.runAsync('UPDATE pluggy_sync SET payload=? WHERE scope=?',payload,scope);if(!changed)await tx.runAsync("UPDATE local_meta SET value=value+1 WHERE key='revision'");}}
  if(changed)await tx.runAsync("UPDATE local_meta SET value=value+1 WHERE key='revision'");
  return {changed,conflicts};
+});}
+
+/** Correct existing imported installment dates on startup without reclassifying financial events. */
+export async function alignInstallmentDueDates(scope:string){return atomic(async tx=>{
+ const {data,controls}=await read(tx,scope),changes=installmentDueDateChanges(data,controls);
+ for(const change of changes)await writeAnnotation(tx,scope,change.id,change.annotation);
+ if(changes.length)await tx.runAsync("UPDATE local_meta SET value=value+1 WHERE key='revision'");
+ return {changed:changes.length};
 });}

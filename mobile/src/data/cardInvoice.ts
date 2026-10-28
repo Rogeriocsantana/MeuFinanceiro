@@ -1,4 +1,5 @@
 import {installmentForecastRows} from './installmentForecast';
+import {installmentDueDate} from './installmentContinuity';
 import type {BankRecord,LocalBankData} from './pluggyModel';
 import type {Control,Reconciliation} from './localControls';
 
@@ -31,13 +32,13 @@ export function cardInvoice(data:LocalBankData,card:BankRecord,month:string,cont
  return {bill,rows,estimatedTotalCents,projectedCents:rows.filter(r=>r.metadata.installmentProjection).reduce((sum,r)=>sum-r.amountCents,0),totalCents:bill?.amountCents??estimatedTotalCents};
 }
 
-/** Known cycle dates projected only when the official bill has not arrived. */
+/** Closing may be estimated; due dates require information for this specific month. */
 export function cardBillingDates(data:LocalBankData,card:BankRecord,month:string,controls:Control[]=[]){
  const bills=data.records.filter(b=>b.kind==='bill'&&b.itemId===card.itemId&&b.accountId===card.accountId&&!['DELETED','CANCELLED'].includes(b.status)),exact=bills.find(b=>b.date.slice(0,7)===month),setting=controls.find(c=>c.type==='card-settings'&&c.accountId===card.accountId&&(!c.itemId||c.itemId===card.itemId));
  const previous=bills.filter(b=>b.date.slice(0,7)<=month).sort((a,b)=>b.date.localeCompare(a.date))[0];
  const project=(day:number,offset=0)=>{if(!Number.isInteger(day)||day<1||day>31)return '';const d=new Date(Number(month.slice(0,4)),Number(month.slice(5,7))-1+offset,1,12);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(Math.min(day,new Date(d.getFullYear(),d.getMonth()+1,0).getDate())).padStart(2,'0');};
  const knownClosing=String(previous?.metadata.closingDate||card.metadata.closingDate||'').slice(0,10),knownDue=String(previous?.date||card.metadata.dueDate||'').slice(0,10),offset=knownClosing&&knownDue?(Number(knownClosing.slice(0,4))*12+Number(knownClosing.slice(5,7)))-(Number(knownDue.slice(0,4))*12+Number(knownDue.slice(5,7))):0;
- return {closing:String(setting?.['closingDate:'+month]||exact?.metadata.closingDate||project(Number(setting?.closingDay||knownClosing.slice(8,10)),offset)).slice(0,10),due:String(setting?.['dueDate:'+month]||exact?.date||project(Number(setting?.dueDay||knownDue.slice(8,10)))).slice(0,10),estimated:!exact};
+ return {closing:String(setting?.['closingDate:'+month]||exact?.metadata.closingDate||project(Number(setting?.closingDay||knownClosing.slice(8,10)),offset)).slice(0,10),due:String(installmentDueDate(card,month,data,controls,true)||'').slice(0,10),estimated:!exact};
 }
 
 /** A card-side receipt must explicitly reference this bill; amount/date alone never identify a payment. */
