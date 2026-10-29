@@ -1,5 +1,5 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript'),{DatabaseSync}=require('node:sqlite');
-function load(file,replacements={}){const mod={exports:{}};new Function('require','exports','module',ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(name=>replacements[name]||(name==='./insightState'?load('src/data/insightState.ts',replacements):name==='../data/purchaseRepository'?{applySavedPurchaseSeries:async()=>({changed:0,conflicts:[]})}:require(name)),mod.exports,mod);return mod.exports;}
+function load(file,replacements={}){const mod={exports:{}};new Function('require','exports','module',ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(name=>replacements[name]||((name==='./insightState'||name==='./bankIdentity')?load('src/data/'+name.slice(2)+'.ts',replacements):name==='../data/purchaseRepository'?{applySavedPurchaseSeries:async()=>({changed:0,conflicts:[]})}:require(name)),mod.exports,mod);return mod.exports;}
 const model=load('src/data/pluggyModel.ts'),reserves=load('src/data/reservePositions.ts',{'./pluggyModel':model});
 test('ampliar e reduzir período filtra a coleta sem apagar registros existentes',async()=>{
  let start='2026-08-01';const saved=new Map(),account={id:'a',itemId:'i',type:'BANK',currencyCode:'BRL',balance:10};
@@ -67,3 +67,4 @@ test('parcela de agosto com data original em março passa no período pela fatur
  assert.equal(model.bankRecordInImportPeriod(row,'2026-08-01'),true);assert.equal(model.bankRecordInImportPeriod({...row,invoiceMonth:'2026-07'},'2026-08-01'),false);assert.equal(model.bankRecordInImportPeriod({...row,invoiceMonth:'2026-11'},'2026-08-01'),true);assert.equal(model.bankRecordInImportPeriod({...row,metadata:{card:false}},'2026-08-01'),false);
  const bill={kind:'bill',id:'bill',itemId:'i',accountId:'card',date:'2026-08-10',metadata:{sourceId:'aug'}};assert.equal(model.bankRecordInImportPeriod({...row,invoiceMonth:'2026-03'},'2026-08-01',[bill]),true);
 });
+

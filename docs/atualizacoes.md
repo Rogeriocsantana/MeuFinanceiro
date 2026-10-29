@@ -1,5 +1,11 @@
 # Atualizações pelo GitHub
 
+## Proteção de vínculos na versão 0.3.44
+
+Nas próximas importações, os identificadores internos usados nas participações e recebimentos permanecem estáveis. Se a referência estável do banco confirmar a identidade, um novo identificador externo é registrado como alias, preservando a quitação.
+
+Valor, descrição e data semelhantes não autorizam transferir pagamentos. Ao detectar possível troca de identificador sem referência segura, a importação é cancelada por inteiro e mostra uma mensagem para conferência. Os dados salvos, quitações, recebimentos e a fila de sincronização permanecem como estavam. Isso pode exigir conferência também para compras legitimamente parecidas; a proteção prioriza não aplicar uma quitação à compra errada.
+
 ## Vencimentos na versão 0.3.43
 
 O dia-base do cartão fica salvo e pode ser editado. Sem configuração anterior, o aplicativo usa o dia recorrente do histórico; sem histórico suficiente, inicia com dia 10. Uma fatura excepcional não muda esse dia-base. Para os cartões Itaú e Mercado Pago desta configuração, o dia-base é 10.

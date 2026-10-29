@@ -156,6 +156,24 @@ test('vencimento usa dia-base e próximo dia de semana sem reaproveitar exceçã
 });
 
 
+test('identificador externo alterado preserva identidade local, quitação e recebimento; dúvida faz rollback integral',async()=>{
+ const f=fixture();try{
+  const original=tx(1,{metadata:{...tx(1).metadata,sourceId:'provider-stable'}});
+  await f.bank.applyBankSnapshot(snapshot([original]));await f.controls.saveControl(scope,person);
+  await f.bank.saveBankAnnotation(scope,'tx1',{nature:'Despesa',shares:[{id:'kept',person:'Ana',amount:'100,00',dueDate:'2026-09-10'}]});
+  const receipt={id:'receipt',type:'reconciliations',name:'Recebimento',controlId:'share:tx1:kept',amountCents:10000,direction:'receipt',date:'2026-09-10'};
+  f.db.prepare('INSERT INTO entity_records VALUES(?,?,?,?,?,?)').run(receipt.type,receipt.id,JSON.stringify(receipt),1,'now',null);
+  const paid=async()=>{const d=await f.bank.loadBankData(),all=await f.controls.listControls();return f.controls.controlBalance(f.controls.deriveObligations(d,all)[0],all.filter(c=>c.type==='reconciliations'));};
+  assert.equal((await paid()).pendingCents,0);
+  const renamed={...original,id:'provider-new-local-id'};await f.bank.applyBankSnapshot(snapshot([renamed]));await f.bank.applyBankSnapshot(snapshot([renamed]));
+  let d=await f.bank.loadBankData();assert.deepEqual(d.records.map(r=>r.id),['tx1']);assert.equal(d.annotations.tx1.shares[0].id,'kept');assert.equal((await paid()).pendingCents,0);assert.ok(d.records[0].metadata.sourceRecordAliases.includes(renamed.id));
+  const before=JSON.stringify(d),queueBefore=f.db.prepare('SELECT count(*) AS n FROM remote_queue').get().n;
+  const uncertain={...original,id:'entirely-new-provider-id',name:'Descrição alterada pelo banco',metadata:{...original.metadata,sourceId:'provider-changed'}};
+  await assert.rejects(f.bank.applyBankSnapshot(snapshot([tx(3),uncertain])),/identificador|quitação/);
+  assert.equal(JSON.stringify(await f.bank.loadBankData()),before);assert.equal(f.db.prepare('SELECT count(*) AS n FROM remote_queue').get().n,queueBefore);assert.equal((await paid()).pendingCents,0);
+ }finally{f.db.close();}
+});
+
 test('parcelas projetadas usam dia-base do cartão, sem copiar dia excepcional da participação',()=>{
  const f=fixture();try{
   const card={...tx(1),id:'card-record',kind:'card',metadata:{dueDate:'2026-10-13'}},part=tx(1,{invoiceMonth:'2026-11',metadata:{...tx(1).metadata,totalInstallments:12}}),d={...snapshot([card,part]),annotations:{[part.id]:{nature:'Despesa',shares:[{id:'kept',person:'Ana',amount:'100,00',dueDate:'2026-11-13'}]}}};
