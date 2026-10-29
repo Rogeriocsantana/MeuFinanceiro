@@ -1,5 +1,5 @@
 import {installmentInfo,installmentAmountsCompatible} from './installmentContinuity';
-import {installmentDueDateChanges} from './installmentContinuity';
+import {installmentDueDateChanges,fixedCardDueDay} from './installmentContinuity';
 import {Platform} from 'react-native';
 import * as Crypto from 'expo-crypto';
 import {database} from './database';
@@ -84,8 +84,18 @@ export async function applySavedPurchaseSeries(scope:string){return atomic(async
 
 /** Correct existing imported installment dates on startup without reclassifying financial events. */
 export async function alignInstallmentDueDates(scope:string){return atomic(async tx=>{
- const {data,controls}=await read(tx,scope),changes=installmentDueDateChanges(data,controls);
+ const {data,controls}=await read(tx,scope);let settingsChanged=0;
+ for(const card of data.records.filter(r=>r.kind==='card')){
+  const matches=controls.filter(c=>c.type==='card-settings'&&c.accountId===card.accountId&&(!c.itemId||c.itemId===card.itemId));
+  if(matches.length>1||matches.length===1&&Number(matches[0]!.dueDay)>=1&&Number(matches[0]!.dueDay)<=31)continue;
+  const setting:Control={...matches[0],id:matches[0]?.id||Crypto.randomUUID(),type:'card-settings',name:matches[0]?.name||card.name,accountId:card.accountId,itemId:card.itemId,dueDay:fixedCardDueDay(card,data,controls)};
+  const payload=JSON.stringify(setting),now=new Date().toISOString();
+  await tx.runAsync('INSERT INTO entity_records VALUES(?,?,?,?,?,?) ON CONFLICT(entity_type,id) DO UPDATE SET payload=excluded.payload,version=entity_records.version+1,updated_at=excluded.updated_at,deleted_at=NULL',setting.type,setting.id,payload,1,now,null);
+  await queueRemoteEdit(tx,scope,'entities',JSON.stringify([setting.type,setting.id]),payload);
+  const index=controls.findIndex(c=>c.id===setting.id);if(index>=0)controls[index]=setting;else controls.push(setting);settingsChanged++;
+ }
+ const changes=installmentDueDateChanges(data,controls);
  for(const change of changes)await writeAnnotation(tx,scope,change.id,change.annotation);
- if(changes.length)await tx.runAsync("UPDATE local_meta SET value=value+1 WHERE key='revision'");
- return {changed:changes.length};
+ if(changes.length||settingsChanged)await tx.runAsync("UPDATE local_meta SET value=value+1 WHERE key='revision'");
+ return {changed:changes.length+settingsChanged};
 });}

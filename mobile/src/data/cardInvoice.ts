@@ -32,7 +32,7 @@ export function cardInvoice(data:LocalBankData,card:BankRecord,month:string,cont
  return {bill,rows,estimatedTotalCents,projectedCents:rows.filter(r=>r.metadata.installmentProjection).reduce((sum,r)=>sum-r.amountCents,0),totalCents:bill?.amountCents??estimatedTotalCents};
 }
 
-/** Closing may be estimated; due dates require information for this specific month. */
+/** Official monthly dates prevail; a configured base day supplies weekday-adjusted forecasts. */
 export function cardBillingDates(data:LocalBankData,card:BankRecord,month:string,controls:Control[]=[]){
  const bills=data.records.filter(b=>b.kind==='bill'&&b.itemId===card.itemId&&b.accountId===card.accountId&&!['DELETED','CANCELLED'].includes(b.status)),exact=bills.find(b=>b.date.slice(0,7)===month),setting=controls.find(c=>c.type==='card-settings'&&c.accountId===card.accountId&&(!c.itemId||c.itemId===card.itemId));
  const previous=bills.filter(b=>b.date.slice(0,7)<=month).sort((a,b)=>b.date.localeCompare(a.date))[0];

@@ -63,7 +63,7 @@ test('lembretes respeitam opções, quitação, vencimentos e chaves estáveis',
   const {notificationPlan}=f.load('src/data/notificationPlan.ts'),preferences=f.prefs.defaultAppPreferences(),data=snapshot([bill(2)]),loan={id:'loan',type:'loans',name:'Contrato',person:'Ana',amountCents:20000,principalCents:20000,monthlyCents:10000,installments:2,dueDate:'2026-10-20'};
   const now=new Date('2026-10-01T12:00:00Z');assert.deepEqual(notificationPlan(data,[loan],preferences,now),[]);
   preferences.notifications={enabled:true,types:['invoice-due','loan-due','bank-updated']};
-  const plan=notificationPlan(data,[loan],preferences,now);assert.equal(plan.length,3);assert.equal(new Set(plan.map(e=>e.id)).size,3);assert.deepEqual(notificationPlan(data,[loan],preferences,now).map(e=>e.id),plan.map(e=>e.id));assert.equal(plan[0].at.toISOString(),'2026-10-10T12:00:00.000Z');
+  const plan=notificationPlan(data,[loan],preferences,now);assert.equal(plan.length,3);assert.equal(new Set(plan.map(e=>e.id)).size,3);assert.deepEqual(notificationPlan(data,[loan],preferences,now).map(e=>e.id),plan.map(e=>e.id));assert.equal(plan[0].at.toISOString(),'2026-10-10T12:00:00.000Z');assert.equal(notificationPlan(data,[loan,{id:'s',type:'card-settings',accountId:'card','dueDate:2026-10':'2026-10-15'}],preferences,now)[0].at.toISOString(),'2026-10-10T12:00:00.000Z');
   const paid=[{id:'paid-bill',type:'reconciliations',date:'2026-10-01',controlId:'bill2',amountCents:10000,direction:'bill-payment'},{id:'paid-loan',type:'reconciliations',controlId:'loan',amountCents:20000,direction:'receipt'}];assert.deepEqual(notificationPlan(data,[loan,...paid],preferences,now),[]);
   preferences.notifications.types=['bank-updated'];assert.deepEqual(notificationPlan(data,[loan],preferences,now),[]);
  }finally{f.db.close();}
@@ -134,7 +134,7 @@ test('arredondamento inicial mantém uma compra única, previsão única e decis
  const f=fixture();try{
   const first=tx(1,{name:'JIM.COM NETTO VENA01/12',amountCents:-66674,date:'2026-10-24',invoiceMonth:'2026-11',metadata:{card:true,installmentNumber:1,totalInstallments:12,purchaseDate:'2026-10-24T12:00:00Z'}}),second={...first,id:'tx2',name:'JIM.COM NETTO VENA02/12',amountCents:-66666,date:'2026-12-03',invoiceMonth:'2026-12',status:'PENDING',metadata:{...first.metadata,installmentNumber:2}},b={...bill(2),id:'b-nov',date:'2026-11-13'};
   await f.bank.applyBankSnapshot(snapshot([first,second,b]));await f.controls.saveControl(scope,person);const rowsBefore=JSON.stringify((await f.bank.loadBankData()).records);
-  const a=await f.purchases.savePurchaseSeries(scope,'tx1',{ownerId:'ana',classification:{nature:'Despesa',categoryId:'shopping'},label:'Compra de móveis'});let d=await f.bank.loadBankData();assert.equal(d.annotations.tx2.categoryId,'shopping');assert.equal(d.annotations.tx2.shares[0].amount,'666,66');assert.equal(d.annotations.tx2.shares[0].dueDate,'2026-12-13');assert.equal(JSON.stringify(d.records),rowsBefore);
+  const a=await f.purchases.savePurchaseSeries(scope,'tx1',{ownerId:'ana',classification:{nature:'Despesa',categoryId:'shopping'},label:'Compra de móveis'});let d=await f.bank.loadBankData();assert.equal(d.annotations.tx2.categoryId,'shopping');assert.equal(d.annotations.tx2.shares[0].amount,'666,66');assert.equal(d.annotations.tx2.shares[0].dueDate,'2026-12-14');assert.equal(JSON.stringify(d.records),rowsBefore);
   const bSave=await f.purchases.savePurchaseSeries(scope,'tx2',{label:'Móveis'});assert.equal(bSave.series.id,a.series.id);assert.equal((await f.controls.listControls()).filter(c=>c.type==='purchase-series').length,1);
   d=await f.bank.loadBankData();const family=f.load('src/data/purchaseSeries.ts').installmentPurchases(d);assert.equal(family.length,1);assert.equal(family[0].importedInstallments,2);assert.equal(family[0].importedTotalCents,133340);
   const forecast=f.load('src/data/installmentForecast.ts').installmentForecastRows;assert.equal(forecast(d,'2026-12').length,0);const jan=forecast(d,'2027-01');assert.equal(jan.length,1);assert.equal(jan[0].metadata.installmentNumber,3);assert.equal(jan[0].amountCents,-66666);
@@ -142,19 +142,43 @@ test('arredondamento inicial mantém uma compra única, previsão única e decis
 });
 
 
-test('vencimento da fatura exige data do próprio mês e não é deduzido pelo histórico ou dia cadastrado',()=>{
+test('vencimento usa dia-base e próximo dia de semana sem reaproveitar exceção histórica',()=>{
  const f=fixture();try{
  const {cardBillingDates}=f.load('src/data/cardInvoice.ts'),{installmentDueDate}=f.load('src/data/installmentContinuity.ts');
  const card={...tx(1),id:'card-record',kind:'card',metadata:{dueDate:'2026-10-13'}},bills=['2026-07-10','2026-08-10','2026-09-10','2026-10-13'].map((date,i)=>({...bill(1),id:'bill-'+i,date,metadata:{closingDate:date.slice(0,7)+'-03'}})),d=snapshot([card,...bills]);
- assert.equal(cardBillingDates(d,card,'2026-10').due,'2026-10-13');assert.equal(cardBillingDates(d,card,'2026-11').due,'');assert.equal(cardBillingDates(d,card,'2026-12').due,'');assert.equal(installmentDueDate(tx(1),'2026-11',d,[],true),undefined);
- assert.equal(cardBillingDates(d,card,'2026-11',[{id:'s',type:'card-settings',accountId:'card',dueDay:15}]).due,'');
+ assert.equal(cardBillingDates(d,card,'2026-10').due,'2026-10-13');assert.equal(cardBillingDates(d,card,'2026-11').due,'2026-11-10');assert.equal(cardBillingDates(d,card,'2026-12').due,'2026-12-10');assert.equal(installmentDueDate(tx(1),'2026-11',d,[],true),'2026-11-10');
+ assert.equal(cardBillingDates(d,card,'2026-11',[{id:'s',type:'card-settings',accountId:'card',dueDay:15}]).due,'2026-11-16');
  assert.equal(cardBillingDates(d,card,'2026-11',[{id:'s',type:'card-settings',accountId:'card','dueDate:2026-11':'2026-11-12'}]).due,'2026-11-12');
  const official={...bill(1),id:'official',date:'2026-11-16'};assert.equal(cardBillingDates(snapshot([...d.records,official]),card,'2026-11').due,'2026-11-16');
- const onlyLast=snapshot([card,bills[3]]);assert.equal(cardBillingDates(onlyLast,card,'2026-11').due,'');
+ const onlyLast=snapshot([card,bills[3]]);assert.equal(cardBillingDates(onlyLast,card,'2026-11').due,'2026-11-10');
  const current={...card,metadata:{dueDate:'2026-11-17'}};assert.equal(cardBillingDates(snapshot([current,...bills]),current,'2026-11').due,'2026-11-17');
  }finally{f.db.close();}
 });
 
+
+test('parcelas projetadas usam dia-base do cartão, sem copiar dia excepcional da participação',()=>{
+ const f=fixture();try{
+  const card={...tx(1),id:'card-record',kind:'card',metadata:{dueDate:'2026-10-13'}},part=tx(1,{invoiceMonth:'2026-11',metadata:{...tx(1).metadata,totalInstallments:12}}),d={...snapshot([card,part]),annotations:{[part.id]:{nature:'Despesa',shares:[{id:'kept',person:'Ana',amount:'100,00',dueDate:'2026-11-13'}]}}};
+  const forecast=f.load('src/data/installmentForecast.ts').withInstallmentForecast(d,['2027-01'],[{id:'s',type:'card-settings',accountId:'card',dueDay:10}]);
+  const projected=forecast.records.find(r=>r.metadata.installmentProjection);assert.ok(projected);assert.equal(forecast.annotations[projected.id].shares[0].dueDate,'2027-01-11');assert.equal(d.annotations[part.id].shares[0].dueDate,'2026-11-13');
+ }finally{f.db.close();}
+});
+
+test('dia-base é salvo uma vez e parcelas acompanham previsão e posterior data bancária',async()=>{
+ const f=fixture();try{
+  const card={...tx(1),id:'card-record',kind:'card',metadata:{dueDate:'2026-10-13'}},part=tx(1,{invoiceMonth:'2027-01'}),history=['2026-08-10','2026-09-10','2026-10-13'].map((date,i)=>({...bill(1),id:'history-'+i,date}));
+  await f.bank.applyBankSnapshot(snapshot([card,part,...history]));await f.controls.saveControl(scope,person);
+  await f.bank.saveBankAnnotation(scope,part.id,{nature:'Despesa',categoryId:'shopping',shares:[{id:'kept',person:'Ana',amount:'100,00',dueDate:'2027-01-13'}]});
+  const recordsBefore=JSON.stringify((await f.bank.loadBankData()).records);
+  const first=await f.purchases.alignInstallmentDueDates(scope);assert.equal(first.changed,2);
+  let controls=await f.controls.listControls();assert.equal(controls.find(c=>c.type==='card-settings').dueDay,10);
+  let current=await f.bank.loadBankData();assert.equal(current.annotations[part.id].shares[0].dueDate,'2027-01-11');assert.equal(JSON.stringify(current.records),recordsBefore);
+  assert.equal((await f.purchases.alignInstallmentDueDates(scope)).changed,0);
+  const official={...bill(1),id:'bank-jan',date:'2027-01-12'};await f.bank.applyBankSnapshot(snapshot([card,part,...history,official]));await f.purchases.alignInstallmentDueDates(scope);
+  current=await f.bank.loadBankData();assert.equal(current.annotations[part.id].shares[0].dueDate,'2027-01-12');assert.equal(current.annotations[part.id].shares[0].id,'kept');assert.equal(current.annotations[part.id].shares[0].amount,'100,00');
+  controls=await f.controls.listControls();assert.equal(controls.find(c=>c.type==='card-settings').dueDay,10);
+ }finally{f.db.close();}
+});
 
 test('novos lançamentos persistem por importação sem confundir atualização com inserção ou alterar valores',async()=>{
  const f=fixture();try{const state=f.load('src/data/insightState.ts');await seed(f);let current=await state.loadInsightState(scope);assert.deepEqual(current.ids.sort(),['tx1','tx2']);await state.saveInsightState(scope,{reviewed:true});const before=JSON.stringify((await f.bank.loadBankData()).records);await f.bank.applyBankSnapshot(snapshot([tx(1),tx(2)]));assert.equal((await state.loadInsightState(scope)).reviewed,true);assert.equal(JSON.stringify((await f.bank.loadBankData()).records),before);await f.bank.applyBankSnapshot(snapshot([tx(3)]));current=await state.loadInsightState(scope);assert.deepEqual(current.ids,['tx3']);assert.equal(current.reviewed,false);await assert.rejects(state.saveInsightState('other',{reviewed:true}),/conexão/);}finally{f.db.close();}
@@ -165,3 +189,6 @@ test('recorrência usa vínculo explícito para substituir previsão sem criar d
 test('alertas reutilizam limite e gasto próprio, exigem ativação por categoria e limitam a repetição',()=>{
  const f=fixture();try{const {controlAlertEvents}=f.load('src/data/controlAlerts.ts'),categories=f.load('src/data/settingsModel.ts').resolveCategories([]),category=categories.find(c=>c.name==='Delivery'),r=tx(2,{amountCents:-9000}),d={...snapshot([r]),annotations:{tx2:{nature:'Despesa',categoryId:category.id}}},setting={id:'monthly-limits',type:'settings',name:'Limites',limits:{Delivery:'100,00'},controlAlerts:{Delivery:true},alertThreshold:'80%'};const events=controlAlertEvents(d,[setting],'2026-10-28');assert.equal(events.length,1);assert.equal(events[0].percent,90);assert.equal(controlAlertEvents(d,[{...setting,controlAlerts:{}}],'2026-10-28').length,0);assert.equal(controlAlertEvents({...d,annotations:{tx2:{...d.annotations.tx2,shares:[{person:'Ana',amount:'90,00',dueDate:'2026-10-10'}]}}},[setting],'2026-10-28').length,0);assert.notEqual(events[0].key,controlAlertEvents(d,[setting],'2026-10-29')[0].key);const band={...setting,alertFrequency:'Só quando mudar de faixa'};assert.equal(controlAlertEvents(d,[band],'2026-10-28')[0].key,controlAlertEvents(d,[band],'2026-10-29')[0].key);}finally{f.db.close();}
 });
+
+
+

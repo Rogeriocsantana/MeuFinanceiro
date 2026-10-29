@@ -1,5 +1,11 @@
 # Atualizações pelo GitHub
 
+## Vencimentos na versão 0.3.43
+
+O dia-base do cartão fica salvo e pode ser editado. Sem configuração anterior, o aplicativo usa o dia recorrente do histórico; sem histórico suficiente, inicia com dia 10. Uma fatura excepcional não muda esse dia-base. Para os cartões Itaú e Mercado Pago desta configuração, o dia-base é 10.
+
+Quando não há uma data oficial para o mês, a previsão avança sábados e domingos para segunda-feira. O aplicativo não presume feriados: quando a instituição enviar o vencimento específico pelo Open Finance, essa data prevalece sobre a previsão. A mesma regra acompanha as parcelas importadas, participações e projeções futuras, preservando valores e vínculos.
+
 ## Correção necessária nas versões 0.3.38 e 0.3.39
 
 Essas versões usavam uma função de tempo limite indisponível no ambiente React Native do Android. A consulta falhava antes de acessar o GitHub. Instale manualmente a versão 0.3.40 por cima da atual, sem desinstalar; ela corrige a consulta e permite testar as próximas Releases pelo próprio app.

@@ -11,7 +11,7 @@ export function notificationPlan(data:LocalBankData,controls:Control[],preferenc
  if(preferences.notifications.types.includes('invoice-due'))for(const bill of data.records.filter(r=>r.kind==='bill'&&!['DELETED','CANCELLED'].includes(r.status))){
   const asOf=new Date(now.getTime()-3*60*60*1000).toISOString().slice(0,10);
   const {pendingCents}=cardBillPaymentSummary(data,bill,receipts,asOf);
-  const settings=controls.find(c=>c.type==='card-settings'&&c.accountId===bill.accountId&&(!c.itemId||c.itemId===bill.itemId)),day=String(settings?.['dueDate:'+bill.date.slice(0,7)]||bill.date);
+  const day=bill.date;
   if(pendingCents>0)add('bill-'+bill.id,'Fatura vence hoje','Confira sua fatura no Financeiro.',day,'cards',bill.accountId);
  }
  if(preferences.notifications.types.includes('loan-due'))for(const loan of controls.filter(c=>c.type==='loans'))for(const part of loanLedger(loan,receipts))if(part.pending>0)add('loan-'+part.id,'Parcela de empréstimo vence hoje',loan.person?'Confira a parcela de '+loan.person+'.':'Confira as parcelas a receber.',part.dueDate,'loan',loan.id);

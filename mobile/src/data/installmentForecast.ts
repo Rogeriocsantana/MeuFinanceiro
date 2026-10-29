@@ -1,5 +1,6 @@
 import type {BankRecord,LocalBankData} from './pluggyModel';
-import {installmentInfo,installmentPurchaseDatesCompatible,installmentAmountsCompatible} from './installmentContinuity';
+import {installmentInfo,installmentPurchaseDatesCompatible,installmentAmountsCompatible,installmentDueDate,nextWeekdayDueDate} from './installmentContinuity';
+import type {Control} from './localControls';
 const index=(month:string)=>Number(month.slice(0,4))*12+Number(month.slice(5,7));
 const compatible=(a:string,b:string)=>a===b||Math.min(a.length,b.length)>=12&&(a.startsWith(b)||b.startsWith(a));
 /** Read-only estimates. Never persist these rows or count them as bank confirmations. */
@@ -18,8 +19,8 @@ export function installmentForecastRows(data:LocalBankData,month:string):BankRec
  }
  return out;
 }
-export function withInstallmentForecast(data:LocalBankData,months:string[]):LocalBankData{
+export function withInstallmentForecast(data:LocalBankData,months:string[],controls:Control[]=[]):LocalBankData{
  const projections=[...new Set(months)].flatMap(month=>installmentForecastRows(data,month)).filter(p=>!data.records.some(r=>r.id===p.id)),annotations={...data.annotations};
- for(const p of projections){const note=data.annotations[p.metadata.projectionSourceId];if(note)annotations[p.id]={...note,shares:note.shares?.map(s=>({...s,dueDate:p.invoiceMonth+'-'+String(Math.min(Number(s.dueDate.slice(8,10))||1,new Date(Number(p.invoiceMonth!.slice(0,4)),Number(p.invoiceMonth!.slice(5,7)),0).getDate())).padStart(2,'0')}))};}
+ for(const p of projections){const note=data.annotations[p.metadata.projectionSourceId];if(note)annotations[p.id]={...note,shares:note.shares?.map(s=>({...s,dueDate:installmentDueDate(p,p.invoiceMonth!,data,controls)||nextWeekdayDueDate(p.invoiceMonth!,Number(s.dueDate.slice(8,10)))||s.dueDate}))};}
  return projections.length?{...data,records:[...data.records,...projections],annotations}:data;
 }

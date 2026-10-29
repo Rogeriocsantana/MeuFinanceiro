@@ -9,7 +9,7 @@ export type InvoiceSelection={itemId:string;accountId:string;month:string;person
 /** Signed totals retain refunds. Person filtering changes the selected portion, never the bank value. */
 export function invoiceDetails(data:LocalBankData,selection:InvoiceSelection,controls:Control[]=[]){
  if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(selection.month))throw Error('Mês da fatura inválido.');
- data=withInstallmentForecast(data,[selection.month]);
+ data=withInstallmentForecast(data,[selection.month],controls);
  const same=(r:BankRecord)=>r.itemId===selection.itemId&&r.accountId===selection.accountId;
  const bills=data.records.filter(r=>r.kind==='bill'&&same(r)&&!['DELETED','CANCELLED'].includes(r.status));
  const unresolved:string[]=[];

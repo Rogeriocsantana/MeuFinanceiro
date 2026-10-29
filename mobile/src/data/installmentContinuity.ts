@@ -25,27 +25,48 @@ export function installmentAmountsCompatible(a:{n:number;count:number;amount:num
  const difference=Math.abs(a.amount-b.amount);
  return difference<=5||((a.n===1)!==(b.n===1))&&difference<=a.count-1;
 }
+export function fixedCardDueDay(card:BankRecord,data:LocalBankData,controls:Control[]){
+ const settings=controls.filter(c=>c.type==='card-settings'&&c.accountId===card.accountId&&(!c.itemId||c.itemId===card.itemId));
+ const valid=(v:unknown)=>Number.isInteger(Number(v))&&Number(v)>=1&&Number(v)<=31;
+ if(settings.length===1&&valid(settings[0]!.dueDay))return Number(settings[0]!.dueDay);
+ if(valid(card.metadata.dueDay))return Number(card.metadata.dueDay);
+ const counts=new Map<number,number>();
+ for(const bill of billsFor(card,data)){const day=Number(bill.date.slice(8,10));if(valid(day))counts.set(day,(counts.get(day)||0)+1);}
+ const ranked=[...counts].sort((a,b)=>b[1]-a[1]);
+ // Repeated contractual days outweigh a single shifted bill. Never use the latest exception as a new base.
+ if(ranked.length&&ranked[0]![1]>=(ranked[1]?.[1]||0)+1&&ranked[0]![1]>=2)return ranked[0]![0];
+ return 10;
+}
+export function nextWeekdayDueDate(month:string,day:number){
+ if(!/^\d{4}-\d{2}$/.test(month)||!Number.isInteger(day)||day<1||day>31)return undefined;
+ const [year,m]=month.split('-').map(Number);if(m!<1||m!>12)return undefined;
+ const date=new Date(Date.UTC(year!,m!-1,Math.min(day,new Date(Date.UTC(year!,m!,0)).getUTCDate())));
+ while(date.getUTCDay()===0||date.getUTCDay()===6)date.setUTCDate(date.getUTCDate()+1);
+ return date.toISOString().slice(0,10);
+}
 export function installmentDueDate(tx:BankRecord,month:string,data:LocalBankData,controls:Control[],officialOnly=false){
  const bills=billsFor(tx,data),settings=controls.filter(c=>c.type==='card-settings'&&c.accountId===tx.accountId&&(!c.itemId||c.itemId===tx.itemId));
  const valid=(value:unknown):value is string=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&Number.isFinite(Date.parse(value+'T12:00:00Z'))&&new Date(value+'T12:00:00Z').toISOString().slice(0,10)===value;
  const overrides=[...new Set(settings.map(c=>c['dueDate:'+month]).filter(value=>valid(value)&&value.slice(0,7)===month))];
- if(overrides.length===1)return overrides[0] as string;
- if(overrides.length>1)return undefined;
  const exact=tx.metadata.billId?bills.filter(b=>b.metadata.sourceId===tx.metadata.billId||b.id===tx.metadata.billId):[];
  if(exact.length===1&&valid(exact[0]!.date)&&exact[0]!.date.slice(0,7)===month)return exact[0]!.date;
  if(exact.length>1)return undefined;
  const monthly=bills.filter(b=>b.date.slice(0,7)===month);
  if(monthly.length===1&&valid(monthly[0]!.date))return monthly[0]!.date;
  if(monthly.length>1)return undefined;
- const card=data.records.find(r=>r.kind==='card'&&r.accountId===tx.accountId&&r.itemId===tx.itemId),cardDue=card?.metadata.dueDate;
+ const card=data.records.find(r=>r.kind==='card'&&r.accountId===tx.accountId&&r.itemId===tx.itemId),cardDue=String(card?.metadata.dueDate||'').slice(0,10);
  if(valid(cardDue)&&cardDue.slice(0,7)===month)return cardDue;
+ if(overrides.length===1)return overrides[0] as string;
+ if(overrides.length>1)return undefined;
+ const fixedDay=card?fixedCardDueDay(card,data,controls):Number(settings.length===1?settings[0]!.dueDay:0);
+ if(Number.isInteger(fixedDay)&&fixedDay>=1&&fixedDay<=31)return nextWeekdayDueDate(month,fixedDay);
  if(officialOnly)return undefined;
  const configuredDay=Number(settings.length===1?settings[0]!.dueDay:0),target=monthIndex(month);
  const available=bills.filter(b=>valid(b.date)&&monthIndex(b.date.slice(0,7))!==null).sort((a,b)=>Math.abs(monthIndex(a.date.slice(0,7))!-target!)-Math.abs(monthIndex(b.date.slice(0,7))!-target!));
  const nearest=available[0],distance=nearest&&target!==null?Math.abs(monthIndex(nearest.date.slice(0,7))!-target):null,nearestDays=new Set(available.filter(b=>distance!==null&&Math.abs(monthIndex(b.date.slice(0,7))!-target!)===distance).map(b=>Number(b.date.slice(8,10))));
  const day=configuredDay||(nearestDays.size===1?Number(nearest!.date.slice(8,10)):0);
  if(target===null||!Number.isInteger(day)||day<1||day>31)return undefined;
- const [year,m]=month.split('-').map(Number),last=new Date(Date.UTC(year!,m!,0)).getUTCDate();return month+'-'+String(Math.min(day,last)).padStart(2,'0');
+ return nextWeekdayDueDate(month,day);
 }
 /** Shares follow their own month's bill; keep ids, amounts, people and financial links intact. */
 export function installmentDueDateChanges(data:LocalBankData,controls:Control[]){
