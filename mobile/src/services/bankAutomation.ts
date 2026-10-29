@@ -1,3 +1,4 @@
+import {refreshIndependent} from './refreshIndependent';
 import {Platform} from 'react-native';
 import * as TaskManager from 'expo-task-manager';
 import * as BackgroundTask from 'expo-background-task';
@@ -11,7 +12,7 @@ const TASK='financeiro-bank-refresh';
 const runners=new Map<string,()=>Promise<boolean>>();
 export async function runAutomaticRefresh(scope:string){
  if(__DEV__&&(scope==='parity-review'||scope==='previsual-native-validation'||process.env.EXPO_PUBLIC_ISOLATED_BANK_VALIDATION==='1'))return false;
- if(!runners.has(scope))runners.set(scope,automaticRefreshRunner({load:async()=>({preferences:await loadAppPreferences(scope),state:await loadRefreshState(scope),latestImportAt:(await loadBankData())?.syncedAt}),save:state=>saveRefreshState(scope,state),synchronize:async()=>{const result=await synchronizePluggy();try{await synchronizeRemote();}catch{}const data=await loadBankData();if(data)await Promise.allSettled([scheduleFinancialNotifications(data),notifyBankUpdated(data,result.changed)]);}}));
+ if(!runners.has(scope))runners.set(scope,automaticRefreshRunner({load:async()=>({preferences:await loadAppPreferences(scope),state:await loadRefreshState(scope),latestImportAt:(await loadBankData())?.syncedAt}),save:state=>saveRefreshState(scope,state),synchronize:async()=>{const outcomes=await refreshIndependent(synchronizePluggy,synchronizeRemote);if(outcomes.bank.status==='rejected')throw outcomes.bank.reason;const result=outcomes.bank.value;const data=await loadBankData();if(data)await Promise.allSettled([scheduleFinancialNotifications(data),notifyBankUpdated(data,result.changed)]);}}));
  return runners.get(scope)!();
 }
 if(Platform.OS!=='web'&&!TaskManager.isTaskDefined(TASK))TaskManager.defineTask(TASK,async()=>{

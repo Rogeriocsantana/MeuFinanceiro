@@ -16,9 +16,17 @@ test('erro de atualização em primeiro plano é comunicado',async()=>{
  let errors=0;const stop=automatic.startForegroundRefresh({active:()=>true,run:async()=>{throw Error('offline');},updated:async()=>assert.fail('no update'),failed:()=>errors++,subscribe:()=>()=>{},repeat:()=>()=>{}});await new Promise(setImmediate);assert.equal(errors,1);stop();
 });
 test('segundo plano mantém o agendamento se intervalo não mudou, mesmo com chamadas concorrentes',async()=>{
- let registered=false,options={},registrations=0,unregisters=0;const module=load('src/services/bankAutomation.ts',{'react-native':{Platform:{OS:'android'}},'expo-task-manager':{isTaskDefined:()=>true,isAvailableAsync:async()=>true,isTaskRegisteredAsync:async()=>registered,getTaskOptionsAsync:async()=>options},'expo-background-task':{registerTaskAsync:async(_,o)=>{registered=true;options=o;registrations++;},unregisterTaskAsync:async()=>{registered=false;unregisters++;}},'../data/pluggyRepository':{},'../data/appPreferences':{},'./automaticRefresh':automatic,'./pluggySync':{},'./remoteSync':{},'./notifications':{}});
+ let registered=false,options={},registrations=0,unregisters=0;const module=load('src/services/bankAutomation.ts',{'react-native':{Platform:{OS:'android'}},'expo-task-manager':{isTaskDefined:()=>true,isAvailableAsync:async()=>true,isTaskRegisteredAsync:async()=>registered,getTaskOptionsAsync:async()=>options},'expo-background-task':{registerTaskAsync:async(_,o)=>{registered=true;options=o;registrations++;},unregisterTaskAsync:async()=>{registered=false;unregisters++;}},'../data/pluggyRepository':{},'../data/appPreferences':{},'./refreshIndependent':load('src/services/refreshIndependent.ts'),'./automaticRefresh':automatic,'./pluggySync':{},'./remoteSync':{},'./notifications':{}});
  await Promise.all([module.configureAutomaticRefresh('owner',60),module.configureAutomaticRefresh('owner',60)]);assert.equal(registrations,1);await module.configureAutomaticRefresh('owner',30);assert.equal(registrations,2);await module.configureAutomaticRefresh('owner',null);assert.equal(unregisters,1);
 });
 test('oculta apenas rendimento sintético zerado, sem esconder lançamento bancário real',()=>{
  const list=load('src/preview/BankTransactionList.tsx',new Proxy({},{get:()=>({})}));const base={amountCents:0,metadata:{}};assert.equal(list.transactionIsVisible(base),true);assert.equal(list.transactionIsVisible({...base,metadata:{reserveYield:true}}),false);assert.equal(list.transactionIsVisible({...base,amountCents:344,metadata:{reserveYield:true}}),true);
+});
+
+test('atualização automática tenta D1 com banco bloqueado e mantém falha para nova tentativa',async()=>{
+ let state={},remoteCalls=0;
+ const block=Error('Vínculos aguardam conferência');
+ const automation=load('src/services/bankAutomation.ts',{'react-native':{Platform:{OS:'android'}},'expo-task-manager':{isTaskDefined:()=>true},'expo-background-task':{},'../data/pluggyRepository':{loadBankData:async()=>({scope:'automatic-test'})},'../data/appPreferences':{loadAppPreferences:async()=>preferences,loadRefreshState:async()=>state,saveRefreshState:async s=>{state=s;}},'./refreshIndependent':load('src/services/refreshIndependent.ts'),'./automaticRefresh':automatic,'./pluggySync':{synchronizePluggy:async()=>{throw block;}},'./remoteSync':{synchronizeRemote:async()=>{remoteCalls++;}},'./notifications':{}});
+ await assert.rejects(automation.runAutomaticRefresh('automatic-test'),e=>e===block);
+ assert.equal(remoteCalls,1);assert.equal(state.lastSuccessAt,undefined);
 });

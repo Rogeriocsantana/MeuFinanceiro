@@ -1,6 +1,6 @@
 {
   "name": "financeiro-mobile",
-  "version": "0.3.45",
+  "version": "0.3.46",
   "private": true,
   "main": "index.ts",
   "scripts": {

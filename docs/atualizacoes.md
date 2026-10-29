@@ -1,5 +1,11 @@
 # Atualizações pelo GitHub
 
+## Sincronizações independentes na versão 0.3.46
+
+A atualização geral e a atualização automática tentam sincronizar o banco remoto D1 mesmo se o Open Finance falhar ou aguardar conferência de vínculos. A sincronização remota precisa estar ativada em Integrações e depende de acesso ao servidor.
+
+Os resultados são independentes: uma falha bancária continua indicada e pode ser tentada novamente; uma falha no D1 mantém a fila pendente. Nenhum vínculo duvidoso é aprovado automaticamente para permitir a sincronização.
+
 ## Vínculos para conferir na versão 0.3.45
 
 Em **Mais → Open Finance / Importações → Vínculos para conferir**, revise compras cuja identidade mudou sem uma referência segura do banco. Se uma importação já foi bloqueada na versão anterior, atualize os dados novamente para carregar os itens para conferência.
