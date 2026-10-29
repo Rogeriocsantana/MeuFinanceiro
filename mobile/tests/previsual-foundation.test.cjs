@@ -277,3 +277,7 @@ test('alertas reutilizam limite e gasto próprio, exigem ativação por categori
 
 
 
+
+test('diagnóstico do aparelho persiste localmente e aviso com falha pode ser tentado novamente',async()=>{
+ const f=fixture();try{await f.bank.applyBankSnapshot(snapshot([]));await f.prefs.saveDeviceEvent(scope,'background-latest',{at:'2026-10-29T12:00:00Z',status:'running'});await f.prefs.saveDeviceEvent(scope,'background-latest',{at:'2026-10-29T12:01:00Z',status:'updated'});assert.equal((await f.prefs.loadDeviceEvent(scope,'background-latest')).status,'updated');assert.equal(f.db.prepare("SELECT COUNT(*) n FROM remote_queue WHERE entity_type='entities'").get().n,0);assert.equal(await f.prefs.recordDeviceEvent(scope,'financeiro-test',{status:'scheduled'}),true);assert.equal(await f.prefs.recordDeviceEvent(scope,'financeiro-test',{}),false);await f.prefs.forgetDeviceEvent(scope,'financeiro-test');assert.equal(await f.prefs.recordDeviceEvent(scope,'financeiro-test',{}),true);}finally{f.db.close();}
+});

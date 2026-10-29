@@ -63,3 +63,7 @@ export async function recordDeviceEvent(scope:string,key:string,payload:Record<s
  if(!/^[\w:.-]{1,200}$/.test(key))throw Error('Identificador de evento inválido.');
  return access(scope,async tx=>{const result=await tx.runAsync('INSERT OR IGNORE INTO device_events VALUES(?,?,?,?)',scope,key,JSON.stringify(payload),new Date().toISOString());if(result.changes)await tx.runAsync("UPDATE local_meta SET value=value+1 WHERE key='revision'");return !!result.changes;});
 }
+
+export async function loadDeviceEvent(scope:string,key:string){return access(scope,async tx=>{const row=await tx.getFirstAsync('SELECT payload FROM device_events WHERE scope=? AND key=?',scope,key);return row?JSON.parse(row.payload):null;});}
+export async function saveDeviceEvent(scope:string,key:string,payload:Record<string,unknown>){return access(scope,async tx=>{await tx.runAsync('INSERT INTO device_events VALUES(?,?,?,?) ON CONFLICT(scope,key) DO UPDATE SET payload=excluded.payload,updated_at=excluded.updated_at',scope,key,JSON.stringify(payload),new Date().toISOString());});}
+export async function forgetDeviceEvent(scope:string,key:string){return access(scope,async tx=>{await tx.runAsync('DELETE FROM device_events WHERE scope=? AND key=?',scope,key);});}

@@ -1,5 +1,17 @@
 # Atualizações pelo GitHub
 
+## Segundo plano e notificações na versão 0.3.48
+
+O agendamento só é configurado depois de carregar as preferências da conexão ativa. Isso evita cancelar a tarefa com o valor manual padrão durante a abertura do app. Avisos imediatos usam o canal financeiro explicitamente; se o Android recusar um agendamento, o registro de deduplicação é liberado para permitir nova tentativa.
+
+Em **Mais → Perfil**, o diagnóstico informa se a tarefa está registrada e a última execução efetiva em segundo plano registrada nesta versão (concluída, intervalo ainda não vencido ou falha). Abrir o app para atualizar não conta como uma execução em segundo plano. Esse diagnóstico fica somente neste aparelho.
+
+Em **Mais → Notificações**, use **Enviar notificação de teste** e **Atualizar diagnóstico** para conferir a permissão do Android, o canal de avisos e a quantidade de lembretes agendados. O teste pede permissão se necessário, mas não altera as preferências salvas de avisos financeiros. Uma atualização bloqueada por vínculos não produz aviso de dados bancários atualizados.
+
+Para testar: salve um intervalo no Perfil, ative e salve os tipos desejados em Notificações, envie o teste e deixe o aplicativo em segundo plano. Depois confira o horário da execução no diagnóstico. O Android controla quando a tarefa roda e pode adiá-la por bateria, rede ou restrições do fabricante; não é um horário garantido. Forçar a parada bloqueia a execução até reabrir o app.
+
+Validação: 214 testes aprovados e TypeScript sem erros. Inclui nova tentativa de notificação após falha e registro de sucesso/falha da tarefa sem tela montada. A execução real no celular depende do teste no aparelho.
+
 ## Resultado separado na versão 0.3.47
 
 Ao terminar a atualização geral, o painel **Resultado da atualização** apresenta duas seções:

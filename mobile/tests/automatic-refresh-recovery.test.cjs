@@ -30,3 +30,9 @@ test('atualização automática tenta D1 com banco bloqueado e mantém falha par
  await assert.rejects(automation.runAutomaticRefresh('automatic-test'),e=>e===block);
  assert.equal(remoteCalls,1);assert.equal(state.lastSuccessAt,undefined);
 });
+
+for(const fails of [false,true])test('execução headless registra '+(fails?'falha':'conclusão')+' sem depender da tela aberta',async()=>{
+ let callback,state={};const events=[];
+ load('src/services/bankAutomation.ts',{'react-native':{Platform:{OS:'android'}},'expo-task-manager':{isTaskDefined:()=>false,defineTask:(_,fn)=>callback=fn},'expo-background-task':{BackgroundTaskResult:{Success:'ok',Failed:'failed'}},'../data/pluggyRepository':{loadBankData:async()=>({scope:'headless',records:[]})},'../data/appPreferences':{loadAppPreferences:async()=>preferences,loadRefreshState:async()=>state,saveRefreshState:async s=>{state=s;},saveDeviceEvent:async(_,key,value)=>events.push({key,...value})},'./refreshIndependent':load('src/services/refreshIndependent.ts'),'./automaticRefresh':automatic,'./pluggySync':{synchronizePluggy:async()=>{if(fails)throw Error('Vínculos pendentes');return {changed:0};}},'./remoteSync':{synchronizeRemote:async()=>{}},'./notifications':{scheduleFinancialNotifications:async()=>{},notifyBankUpdated:async()=>{}}});
+ assert.equal(await callback(),fails?'failed':'ok');assert.equal(events[0].status,'running');assert.equal(events.at(-1).status,fails?'failed':'updated');if(fails)assert.match(events.at(-1).error,/Vínculos/);
+});

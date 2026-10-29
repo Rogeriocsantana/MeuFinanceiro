@@ -61,15 +61,15 @@ function FinanceiroPreview(){
  const [refreshSummary,setRefreshSummary]=useState<RefreshReport|null>(null);
 
  const [bankData,setBankData]=useState<LocalBankData|null>(null);
- const [preferences,setPreferences]=useState(defaultAppPreferences);
- useEffect(()=>{let live=true;loadAppPreferences(bankData?.scope||'device-profile').then(value=>{if(live)setPreferences(previous=>JSON.stringify(previous)===JSON.stringify(value)?previous:value);}).catch(()=>{});return()=>{live=false;};},[bankData]);
+ const [preferences,setPreferences]=useState(defaultAppPreferences);const [preferencesScope,setPreferencesScope]=useState('');
+ useEffect(()=>{let live=true;loadAppPreferences(bankData?.scope||'device-profile').then(value=>{if(live){setPreferences(previous=>JSON.stringify(previous)===JSON.stringify(value)?previous:value);setPreferencesScope(bankData?.scope||'device-profile');}}).catch(()=>{});return()=>{live=false;};},[bankData]);
  useEffect(()=>{
-  if(!bankData||review)return;
+  if(!bankData||review||preferencesScope!==bankData.scope)return;
   let alive=true;
   void configureAutomaticRefresh(bankData.scope,preferences.refresh.intervalMinutes).catch(()=>{if(alive)feedback('Não foi possível configurar a atualização em segundo plano. A verificação ao abrir o app continua ativa.');});
   const stop=startForegroundRefresh({active:()=>AppState.currentState==='active',run:()=>runAutomaticRefresh(bankData.scope),updated:()=>reloadBankData(),failed:()=>feedback('A atualização automática não foi concluída. Os dados anteriores foram preservados; haverá nova tentativa quando o app estiver ativo.'),subscribe:check=>{const listener=AppState.addEventListener('change',state=>{if(state==='active')check();});return()=>listener.remove();},repeat:check=>{const timer=setInterval(check,30000);return()=>clearInterval(timer);}});
   return()=>{alive=false;stop();};
- },[bankData?.scope,preferences.refresh.intervalMinutes]);
+ },[bankData?.scope,preferences.refresh.intervalMinutes,preferencesScope]);
  useEffect(()=>{if(bankData)void scheduleFinancialNotifications(bankData).catch(()=>{});},[bankData,preferences]);
  const [bankReady,setBankReady]=useState(false),[bankLoadError,setBankLoadError]=useState('');
  const retainedScroll=useRef<{offset:number;route:string}|null>(null),scrollOffset=useRef(0),currentRoute=useRef(''),routeOffsets=useRef<Record<string,number>>({});

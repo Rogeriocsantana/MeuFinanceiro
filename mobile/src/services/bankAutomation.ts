@@ -3,7 +3,7 @@ import {Platform} from 'react-native';
 import * as TaskManager from 'expo-task-manager';
 import * as BackgroundTask from 'expo-background-task';
 import {loadBankData} from '../data/pluggyRepository';
-import {loadAppPreferences,loadRefreshState,saveRefreshState} from '../data/appPreferences';
+import {loadAppPreferences,loadRefreshState,saveRefreshState,saveDeviceEvent} from '../data/appPreferences';
 import {automaticRefreshRunner} from './automaticRefresh';
 import {synchronizePluggy} from './pluggySync';
 import {synchronizeRemote} from './remoteSync';
@@ -16,7 +16,7 @@ export async function runAutomaticRefresh(scope:string){
  return runners.get(scope)!();
 }
 if(Platform.OS!=='web'&&!TaskManager.isTaskDefined(TASK))TaskManager.defineTask(TASK,async()=>{
- try{const data=await loadBankData();if(data)await runAutomaticRefresh(data.scope);return BackgroundTask.BackgroundTaskResult.Success;}catch{return BackgroundTask.BackgroundTaskResult.Failed;}
+ let scope='';try{const data=await loadBankData();if(data){scope=data.scope;await saveDeviceEvent(scope,'background-latest',{at:new Date().toISOString(),status:'running'});const changed=await runAutomaticRefresh(scope);await saveDeviceEvent(scope,'background-latest',{at:new Date().toISOString(),status:changed?'updated':'not-due'});}return BackgroundTask.BackgroundTaskResult.Success;}catch(e){if(scope)await saveDeviceEvent(scope,'background-latest',{at:new Date().toISOString(),status:'failed',error:e instanceof Error?e.message:'Falha na execução'}).catch(()=>{});return BackgroundTask.BackgroundTaskResult.Failed;}
 });
 let configuring:Promise<void>=Promise.resolve();
 export function configureAutomaticRefresh(scope:string,intervalMinutes:number|null){
