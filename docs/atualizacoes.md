@@ -1,5 +1,16 @@
 # Atualizações pelo GitHub
 
+## Resultado separado na versão 0.3.47
+
+Ao terminar a atualização geral, o painel **Resultado da atualização** apresenta duas seções:
+
+- **Open Finance:** registros atualizados ou o motivo da interrupção, incluindo vínculos aguardando conferência.
+- **D1:** sincronizado, com pendências, desativado, não configurado ou falha. Uma comunicação concluída mostra o horário, as operações aguardando envio e os conflitos da conta sincronizada.
+
+O D1 só aparece como sincronizado quando a passagem concluiu e a fila e os conflitos estão zerados. A atualização geral aguarda uma passagem remota anterior e inicia uma nova para incluir alterações recentes. Edições feitas durante o envio são capturadas entre os lotes, reduzindo a necessidade de uma segunda atualização manual. Em caso de limite de lotes ou alterações ainda pendentes, o painel indica pendências para conferir em Integrações.
+
+Para testar com vínculos pendentes, mantenha-os aguardando, use a atualização geral e confira as duas seções do painel. A importação bloqueada não impede a tentativa remota e nenhuma quitação é transferida sem sua decisão.
+
 ## Sincronizações independentes na versão 0.3.46
 
 A atualização geral e a atualização automática tentam sincronizar o banco remoto D1 mesmo se o Open Finance falhar ou aguardar conferência de vínculos. A sincronização remota precisa estar ativada em Integrações e depende de acesso ao servidor.

@@ -2,14 +2,14 @@
   "expo": {
     "name": "Financeiro",
     "slug": "financeiro-mobile",
-    "version": "0.3.46",
+    "version": "0.3.47",
     "scheme": "financeiro",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "android": {
       "package": "com.roger.financeiro",
       "allowBackup": false,
-      "versionCode": 47,
+      "versionCode": 48,
       "permissions": [
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE",

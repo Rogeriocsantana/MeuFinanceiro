@@ -236,3 +236,6 @@ Logos pertencem às respectivas instituições. Proveniência em [mobile/assets/
 
 Quando o banco muda o identificador de uma compra e não há correspondência segura, a importação fica aguardando conferência. É possível manter o mesmo lançamento, preservando pagamentos e recebimentos, ou importar como outra compra. As decisões ficam salvas para as próximas atualizações. Veja o [passo a passo](docs/atualizacoes.md).
 
+
+Ao concluir a atualização geral, o app apresenta um resumo separado do **Open Finance** e do **D1**, com o resultado real, horário de comunicação, fila pendente e conflitos. O D1 é tentado mesmo quando os vínculos bancários aguardam conferência.
+
