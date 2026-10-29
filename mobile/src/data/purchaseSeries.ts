@@ -9,8 +9,8 @@ export function purchaseIdentity(tx:BankRecord,data:LocalBankData){
  let cache=identityCache.get(data.records);if(!cache){cache=new WeakMap();identityCache.set(data.records,cache);}
  const cached=cache.get(tx);if(cached)return cached.value;
  const info=installmentInfo(tx,data);
- if(info?.purchaseKey.startsWith('purchase:')){const day=info.purchaseKey.split('|')[0]!,candidates=data.records.filter(other=>other.itemId===tx.itemId&&other.accountId===tx.accountId&&installmentPurchaseDatesCompatible(other,tx)).map(other=>installmentInfo(other,data)).filter((other):other is NonNullable<typeof info>=>!!other&&other.purchaseKey.startsWith('purchase:')&&other.count===info.count&&other.cycle===info.cycle&&installmentAmountsCompatible(other,info)&&(other.merchant===info.merchant||Math.min(other.merchant.length,info.merchant.length)>=12&&(other.merchant.startsWith(info.merchant)||info.merchant.startsWith(other.merchant))));const merchant=candidates.map(c=>c.merchant).sort((a,b)=>a.length-b.length||a.localeCompare(b))[0]||info.merchant;const canonicalDay=[day,...candidates.map(c=>c.purchaseKey.split('|')[0]!)].sort()[0]!;info.purchaseKey=canonicalDay+'|'+merchant;}
- const value=info?JSON.stringify([tx.itemId,tx.accountId,info.purchaseKey,info.count,info.cycle]):null;
+ if(info?.purchaseKey.startsWith('purchase:')){const day=info.purchaseKey.split('|')[0]!,candidates=data.records.filter(other=>other.itemId===tx.itemId&&other.accountId===tx.accountId&&other.metadata.identitySeparateRoot===tx.metadata.identitySeparateRoot&&installmentPurchaseDatesCompatible(other,tx)).map(other=>installmentInfo(other,data)).filter((other):other is NonNullable<typeof info>=>!!other&&other.purchaseKey.startsWith('purchase:')&&other.count===info.count&&other.cycle===info.cycle&&installmentAmountsCompatible(other,info)&&(other.merchant===info.merchant||Math.min(other.merchant.length,info.merchant.length)>=12&&(other.merchant.startsWith(info.merchant)||info.merchant.startsWith(other.merchant))));const merchant=candidates.map(c=>c.merchant).sort((a,b)=>a.length-b.length||a.localeCompare(b))[0]||info.merchant;const canonicalDay=[day,...candidates.map(c=>c.purchaseKey.split('|')[0]!)].sort()[0]!;info.purchaseKey=canonicalDay+'|'+merchant;}
+ const value=info?JSON.stringify([tx.itemId,tx.accountId,info.purchaseKey,info.count,info.cycle,...(tx.metadata.identitySeparateRoot?[tx.metadata.identitySeparateRoot]:[])]):null;
  cache.set(tx,{value});return value;
 }
 export function purchaseFamily(data:LocalBankData,anchor:BankRecord){
@@ -84,3 +84,4 @@ export function purchaseParticipants(data:LocalBankData,records:BankRecord[],peo
  }
  return [...participants.values()].sort((a,b)=>Number(b.self)-Number(a.self)||a.name.localeCompare(b.name));
 }
+

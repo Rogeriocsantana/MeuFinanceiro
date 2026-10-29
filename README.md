@@ -231,3 +231,8 @@ Projeto pessoal de Rogério Santana. React Native, Expo, TypeScript e SQLite for
 Logos pertencem às respectivas instituições. Proveniência em [mobile/assets/banks/SOURCES.md](mobile/assets/banks/SOURCES.md). Não há licença de redistribuição definida nesta entrega.
 
 
+
+### Conferência de vínculos do Open Finance
+
+Quando o banco muda o identificador de uma compra e não há correspondência segura, a importação fica aguardando conferência. É possível manter o mesmo lançamento, preservando pagamentos e recebimentos, ou importar como outra compra. As decisões ficam salvas para as próximas atualizações. Veja o [passo a passo](docs/atualizacoes.md).
+

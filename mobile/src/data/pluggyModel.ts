@@ -6,6 +6,7 @@ export const SYNC_SCHEMA=`
 CREATE TABLE IF NOT EXISTS pluggy_records(scope TEXT NOT NULL,id TEXT NOT NULL,kind TEXT NOT NULL,payload TEXT NOT NULL CHECK(json_valid(payload)),updated_at TEXT NOT NULL,PRIMARY KEY(scope,id));
 CREATE TABLE IF NOT EXISTS pluggy_annotations(scope TEXT NOT NULL,id TEXT NOT NULL,payload TEXT NOT NULL CHECK(json_valid(payload)),version INTEGER NOT NULL DEFAULT 1,updated_at TEXT NOT NULL,PRIMARY KEY(scope,id));
 CREATE TABLE IF NOT EXISTS pluggy_sync(scope TEXT PRIMARY KEY,payload TEXT NOT NULL CHECK(json_valid(payload)));
+CREATE TABLE IF NOT EXISTS bank_identity_reviews(scope TEXT PRIMARY KEY,payload TEXT NOT NULL CHECK(json_valid(payload)));
 `;
 export const UPSERT_REMOTE=`INSERT INTO pluggy_records(scope,id,kind,payload,updated_at) VALUES(?,?,?,?,?) ON CONFLICT(scope,id) DO UPDATE SET kind=excluded.kind,payload=excluded.payload,updated_at=excluded.updated_at WHERE pluggy_records.payload<>excluded.payload`;
 export function cents(value:unknown){const amount=Number(value);if(value===null||value===undefined||value===''||!Number.isFinite(amount)||!Number.isSafeInteger(Math.round(amount*100)))throw new Error('A instituição retornou um valor inválido.');return Math.round(amount*100);}

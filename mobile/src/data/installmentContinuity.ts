@@ -17,7 +17,7 @@ export function installmentInfo(tx:BankRecord,data:LocalBankData){
  const n=Number(tx.metadata.installmentNumber),count=Number(tx.metadata.totalInstallments),month=invoiceMonth(tx,data),index=monthIndex(month),merchant=normalize(tx.name).replace(/(?:\s*PARC(?:ELA)?\s*)?\d{1,2}\s*\/\s*\d{1,2}\s*$/,'').trim();
  if(tx.kind!=='transaction'||!tx.metadata.card||tx.amountCents>=0||['CANCELLED','DELETED'].includes(tx.status)||!Number.isInteger(n)||!Number.isInteger(count)||n<1||count<2||n>count||index===null||!merchant)return null;
  const rawPurchase=tx.metadata.purchaseDate||tx.metadata.transactionDateTime,precise=typeof rawPurchase==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(rawPurchase)&&Number.isFinite(Date.parse(rawPurchase))?new Date(rawPurchase).toISOString():null;
- return {n,count,month,merchant,purchaseKey:precise?'purchase:'+installmentPurchaseDay(tx)+'|'+merchant:merchant,cycle:index-n,amount:Math.abs(tx.amountCents)};
+ return {n,count,month,merchant,purchaseKey:(precise?'purchase:'+installmentPurchaseDay(tx)+'|'+merchant:merchant)+(tx.metadata.identitySeparateRoot?'|separate:'+tx.metadata.identitySeparateRoot:''),cycle:index-n,amount:Math.abs(tx.amountCents)};
 }
 /** The first installment may carry the cent remainder of all the other installments. */
 export function installmentAmountsCompatible(a:{n:number;count:number;amount:number},b:{n:number;count:number;amount:number}){
@@ -108,3 +108,4 @@ export function installmentContinuityChanges(data:LocalBankData,controls:Control
  }
  return {changes,conflicts};
 }
+

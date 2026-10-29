@@ -1,5 +1,19 @@
 # Atualizações pelo GitHub
 
+## Vínculos para conferir na versão 0.3.45
+
+Em **Mais → Open Finance / Importações → Vínculos para conferir**, revise compras cuja identidade mudou sem uma referência segura do banco. Se uma importação já foi bloqueada na versão anterior, atualize os dados novamente para carregar os itens para conferência.
+
+- **É o mesmo lançamento:** selecione o registro salvo. O aplicativo mantém a identidade local, as participações, a quitação e os recebimentos vinculados, e passa a reconhecer o novo identificador externo.
+- **É outra compra:** o lançamento recebido fica separado. Nenhum pagamento da compra anterior é transferido para ele.
+
+Salve a decisão de cada item e toque em **Concluir importação**. As decisões parciais ficam salvas mesmo ao fechar o aplicativo; a importação só é aplicada quando todos os itens estiverem conferidos. Depois de concluída, repetir os mesmos identificadores não exige nova conferência. Uma nova mudança de identidade sem referência segura pode exigir outra revisão.
+
+Se os dados financeiros mudarem durante a conferência, a conclusão é recusada para preservar os vínculos. Atualize a importação e confira novamente com os dados atuais. Alterações de valor e outros campos continuam passando pela revisão de alterações existente.
+
+Validação: 194 testes automatizados, incluindo persistência das decisões, importações repetidas, compras separadas, preservação de recebimentos e rollback em falha de gravação.
+
+
 ## Proteção de vínculos na versão 0.3.44
 
 Nas próximas importações, os identificadores internos usados nas participações e recebimentos permanecem estáveis. Se a referência estável do banco confirmar a identidade, um novo identificador externo é registrado como alias, preservando a quitação.

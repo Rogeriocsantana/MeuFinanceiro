@@ -174,6 +174,72 @@ test('identificador externo alterado preserva identidade local, quitação e rec
  }finally{f.db.close();}
 });
 
+async function paidIdentityScenario(f){
+ const original=tx(1,{metadata:{...tx(1).metadata,sourceId:'provider-old'}}),incoming={...original,id:'bank-new-id',metadata:{...original.metadata,sourceId:'provider-new'}};
+ await f.bank.applyBankSnapshot(snapshot([original]));await f.controls.saveControl(scope,person);
+ await f.bank.saveBankAnnotation(scope,original.id,{nature:'Despesa',categoryId:'shopping',shares:[{id:'kept',person:'Ana',amount:'100,00',dueDate:'2026-09-10'}]});
+ const receipt={id:'paid-receipt',type:'reconciliations',name:'Recebimento',controlId:'share:tx1:kept',amountCents:10000,direction:'receipt',date:'2026-09-10'};
+ f.db.prepare('INSERT INTO entity_records VALUES(?,?,?,?,?,?)').run(receipt.type,receipt.id,JSON.stringify(receipt),1,'now',null);
+ await assert.rejects(f.bank.applyBankSnapshot(snapshot([incoming])),/identificador/);
+ return {original,incoming,review:await f.bank.loadBankIdentityReview(scope),receipt};
+}
+test('conferência de mesmo lançamento persiste após reabrir e não reaparece nas importações seguintes',async()=>{
+ const filename=path.join(os.tmpdir(),'financeiro-identity-'+crypto.randomUUID()+'.sqlite');let f=fixture(filename);
+ try{
+  const {incoming,review,receipt}=await paidIdentityScenario(f);assert.equal(review.conflicts.length,1);
+  await f.bank.saveBankIdentityDecision(scope,review.id,{recordId:incoming.id,choice:'same',matchedId:'tx1'});f.db.close();f=fixture(filename);
+  const restored=await f.bank.loadBankIdentityReview(scope);assert.equal(restored.decisions[0].choice,'same');await f.bank.completeBankIdentityReview(scope,restored.id);
+  let d=await f.bank.loadBankData();assert.deepEqual(d.records.map(r=>r.id),['tx1']);assert.equal(d.annotations.tx1.shares[0].id,'kept');assert.equal((await f.bank.loadBankIdentityReview(scope)),null);
+  const all=await f.controls.listControls();assert.deepEqual(all.find(c=>c.id===receipt.id),receipt);assert.equal(f.controls.controlBalance(f.controls.deriveObligations(d,all)[0],all.filter(c=>c.type==='reconciliations')).pendingCents,0);
+  for(let i=0;i<3;i++)assert.equal(await f.bank.applyBankSnapshot(snapshot([incoming])),0);
+  assert.equal(await f.bank.loadBankIdentityReview(scope),null);d=await f.bank.loadBankData();assert.equal(d.records.length,1);
+ }finally{f.db.close();fs.rmSync(filename,{force:true});}
+});
+test('outra compra é independente, preserva a quitação anterior e lembra a separação',async()=>{
+ const f=fixture();try{
+  const {incoming,review,receipt}=await paidIdentityScenario(f);await f.bank.saveBankIdentityDecision(scope,review.id,{recordId:incoming.id,choice:'separate'});await f.bank.completeBankIdentityReview(scope,review.id);
+  let d=await f.bank.loadBankData();assert.equal(d.records.length,2);assert.equal(d.annotations[incoming.id],undefined);assert.equal(d.records.find(r=>r.id===incoming.id).metadata.identitySeparateRoot,incoming.id);
+  const all=await f.controls.listControls();assert.deepEqual(all.find(c=>c.id===receipt.id),receipt);const obligations=f.controls.deriveObligations(d,all);assert.equal(obligations.some(c=>c.transactionId===incoming.id),false);assert.equal(f.controls.controlBalance(obligations.find(c=>c.transactionId==='tx1'),all.filter(c=>c.type==='reconciliations')).pendingCents,0);
+  const identity=f.load('src/data/purchaseSeries.ts').purchaseIdentity;assert.notEqual(identity(d.records.find(r=>r.id==='tx1'),d),identity(d.records.find(r=>r.id===incoming.id),d));
+  for(let i=0;i<3;i++)await f.bank.applyBankSnapshot(snapshot([incoming]));assert.equal(await f.bank.loadBankIdentityReview(scope),null);d=await f.bank.loadBankData();assert.equal(d.records.find(r=>r.id===incoming.id).metadata.identitySeparateRoot,incoming.id);assert.equal(d.annotations[incoming.id],undefined);
+ }finally{f.db.close();}
+});
+test('conferência rejeita conexão trocada, candidato inválido, dados novos e repetição após concluir',async()=>{
+ const f=fixture();try{
+  const {incoming,review}=await paidIdentityScenario(f);await assert.rejects(f.bank.saveBankIdentityDecision('other',review.id,{recordId:incoming.id,choice:'same',matchedId:'tx1'}),/conexão/);
+  await assert.rejects(f.bank.saveBankIdentityDecision(scope,review.id,{recordId:incoming.id,choice:'same',matchedId:'foreign-card'}),/Selecione/);
+  await assert.rejects(f.bank.completeBankIdentityReview(scope,review.id),/todos/);
+  await f.bank.saveBankIdentityDecision(scope,review.id,{recordId:incoming.id,choice:'same',matchedId:'tx1'});
+  await f.bank.saveBankAnnotation(scope,'tx1',{...(await f.bank.loadBankData()).annotations.tx1,notes:'Nova conferência'});
+  await assert.rejects(f.bank.completeBankIdentityReview(scope,review.id),/mudaram/);assert.equal((await f.bank.loadBankIdentityReview(scope)).id,review.id);
+  await assert.rejects(f.bank.applyBankSnapshot(snapshot([incoming])),/identificador/);const fresh=await f.bank.loadBankIdentityReview(scope);assert.notEqual(fresh.id,review.id);
+  await f.bank.saveBankIdentityDecision(scope,fresh.id,{recordId:incoming.id,choice:'same',matchedId:'tx1'});await f.bank.completeBankIdentityReview(scope,fresh.id);
+  await assert.rejects(f.bank.completeBankIdentityReview(scope,fresh.id),/concluída/);assert.equal((await f.bank.loadBankData()).records.length,1);
+ }finally{f.db.close();}
+});
+test('vários vínculos exigem decisões distintas e só importam depois de todas as conferências',async()=>{
+ const f=fixture();try{
+  const {original,incoming}=await paidIdentityScenario(f),second={...incoming,id:'another-new-id',metadata:{...incoming.metadata,sourceId:'another-provider'}};
+  await assert.rejects(f.bank.applyBankSnapshot(snapshot([original,incoming,second])),/identificador/);const review=await f.bank.loadBankIdentityReview(scope);assert.equal(review.conflicts.length,2);
+  await f.bank.saveBankIdentityDecision(scope,review.id,{recordId:incoming.id,choice:'same',matchedId:'tx1'});
+  await assert.rejects(f.bank.completeBankIdentityReview(scope,review.id),/todos/);
+  await assert.rejects(f.bank.saveBankIdentityDecision(scope,review.id,{recordId:second.id,choice:'same',matchedId:'tx1'}),/já foi escolhido/);
+  await f.bank.saveBankIdentityDecision(scope,review.id,{recordId:second.id,choice:'separate'});await f.bank.completeBankIdentityReview(scope,review.id);
+  let d=await f.bank.loadBankData();assert.deepEqual(d.records.map(r=>r.id).sort(),['tx1',second.id].sort());assert.equal(d.annotations[second.id],undefined);
+  await f.bank.applyBankSnapshot(snapshot([original,incoming,second]));assert.equal(await f.bank.loadBankIdentityReview(scope),null);d=await f.bank.loadBankData();assert.equal(d.records.length,2);assert.equal(d.annotations.tx1.shares[0].id,'kept');
+ }finally{f.db.close();}
+});
+
+test('falha ao concluir conserva decisões, quitação, anotações e fila sem aplicar metade da importação',async()=>{
+ const f=fixture();try{
+  const {incoming,review}=await paidIdentityScenario(f);await f.bank.saveBankIdentityDecision(scope,review.id,{recordId:incoming.id,choice:'same',matchedId:'tx1'});
+  const before=JSON.stringify(await f.bank.loadBankData()),queue=f.db.prepare('SELECT count(*) AS n FROM remote_queue').get().n;
+  f.db.exec("CREATE TRIGGER identity_fail BEFORE UPDATE ON pluggy_records BEGIN SELECT RAISE(ABORT,'forced identity failure'); END;");
+  await assert.rejects(f.bank.completeBankIdentityReview(scope,review.id),/forced identity/);assert.equal(JSON.stringify(await f.bank.loadBankData()),before);assert.equal(f.db.prepare('SELECT count(*) AS n FROM remote_queue').get().n,queue);assert.equal((await f.bank.loadBankIdentityReview(scope)).decisions.length,1);
+  f.db.exec('DROP TRIGGER identity_fail');await f.bank.completeBankIdentityReview(scope,review.id);assert.equal(await f.bank.loadBankIdentityReview(scope),null);
+ }finally{f.db.close();}
+});
+
 test('parcelas projetadas usam dia-base do cartão, sem copiar dia excepcional da participação',()=>{
  const f=fixture();try{
   const card={...tx(1),id:'card-record',kind:'card',metadata:{dueDate:'2026-10-13'}},part=tx(1,{invoiceMonth:'2026-11',metadata:{...tx(1).metadata,totalInstallments:12}}),d={...snapshot([card,part]),annotations:{[part.id]:{nature:'Despesa',shares:[{id:'kept',person:'Ana',amount:'100,00',dueDate:'2026-11-13'}]}}};
@@ -207,6 +273,7 @@ test('recorrência usa vínculo explícito para substituir previsão sem criar d
 test('alertas reutilizam limite e gasto próprio, exigem ativação por categoria e limitam a repetição',()=>{
  const f=fixture();try{const {controlAlertEvents}=f.load('src/data/controlAlerts.ts'),categories=f.load('src/data/settingsModel.ts').resolveCategories([]),category=categories.find(c=>c.name==='Delivery'),r=tx(2,{amountCents:-9000}),d={...snapshot([r]),annotations:{tx2:{nature:'Despesa',categoryId:category.id}}},setting={id:'monthly-limits',type:'settings',name:'Limites',limits:{Delivery:'100,00'},controlAlerts:{Delivery:true},alertThreshold:'80%'};const events=controlAlertEvents(d,[setting],'2026-10-28');assert.equal(events.length,1);assert.equal(events[0].percent,90);assert.equal(controlAlertEvents(d,[{...setting,controlAlerts:{}}],'2026-10-28').length,0);assert.equal(controlAlertEvents({...d,annotations:{tx2:{...d.annotations.tx2,shares:[{person:'Ana',amount:'90,00',dueDate:'2026-10-10'}]}}},[setting],'2026-10-28').length,0);assert.notEqual(events[0].key,controlAlertEvents(d,[setting],'2026-10-29')[0].key);const band={...setting,alertFrequency:'Só quando mudar de faixa'};assert.equal(controlAlertEvents(d,[band],'2026-10-28')[0].key,controlAlertEvents(d,[band],'2026-10-29')[0].key);}finally{f.db.close();}
 });
+
 
 
 
