@@ -1,5 +1,15 @@
 # Atualizações pelo GitHub
 
+## Recuperação de requisições e diagnóstico na versão 0.3.49
+
+O limite de 25 segundos agora cobre a requisição inteira, inclusive a leitura do corpo JSON. Antes, o temporizador era encerrado ao receber os cabeçalhos: uma resposta incompleta poderia manter a sincronização pendente. O limite também retorna erro quando a implementação nativa não encerra a promessa após o pedido de cancelamento.
+
+A tarefa em segundo plano registra as etapas **verificando intervalo**, **consultando Open Finance**, **sincronizando D1** e **preparando notificações**. O Perfil mostra a última etapa registrada. Um registro sem conclusão por mais de dez minutos aparece como **sem conclusão registrada; pode ter sido interrompida**, sem presumir sucesso ou afirmar a causa da interrupção.
+
+Uma tentativa sem conclusão não reinicia o intervalo configurado: o cálculo considera a última atualização concluída e permite nova tentativa após o intervalo curto de proteção. O Android continua controlando quando executa o trabalho em segundo plano. A versão anterior não tinha registro de etapas suficiente para identificar o ponto de uma interrupção já ocorrida.
+
+Validação: 219 testes aprovados e TypeScript sem erros, incluindo resposta JSON que não termina, fetch que não respeita cancelamento, nova tentativa e cenário de intervalo de 720 minutos vencido.
+
 ## Segundo plano e notificações na versão 0.3.48
 
 O agendamento só é configurado depois de carregar as preferências da conexão ativa. Isso evita cancelar a tarefa com o valor manual padrão durante a abertura do app. Avisos imediatos usam o canal financeiro explicitamente; se o Android recusar um agendamento, o registro de deduplicação é liberado para permitir nova tentativa.

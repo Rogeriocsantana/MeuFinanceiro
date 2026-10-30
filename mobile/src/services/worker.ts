@@ -11,10 +11,13 @@ const messages:Record<string,string>={UNAUTHORIZED:'Token de acesso inválido ou
 async function request(config:WorkerConfig,path:string,method='GET',body?:unknown){
  const base=validateWorkerUrl(config.url);if(!/^[A-Za-z0-9_-]{43,128}$/.test(config.token))throw new Error('Informe o token de acesso ao servidor.');
  if(!path.startsWith('/v1/')||path.includes('://'))throw new Error('Rota inválida.');
- const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),25000);
- let response:Response;try{response=await fetch(base+path,{method,headers:{Authorization:'Bearer '+config.token,...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined,redirect:'error',signal:controller.signal});}catch{throw new Error(controller.signal.aborted?'O servidor demorou para responder. Tente novamente.':'Não foi possível acessar o servidor. Confira o endereço e sua conexão com a internet.');}finally{clearTimeout(timer);}
- let result:any;try{result=await response.json();}catch{throw new Error('O endereço não respondeu como uma API do Financeiro.');}
- if(!response.ok)throw new Error(messages[result.error]||'Integração indisponível ('+response.status+').');return result;
+ const controller=new AbortController();let timer:ReturnType<typeof setTimeout>|undefined;
+ const deadline=new Promise<never>((_,reject)=>{timer=setTimeout(()=>{controller.abort();reject(new Error('O servidor demorou para responder. Tente novamente.'));},25000);});
+ try{return await Promise.race([(async()=>{
+  let response:Response;try{response=await fetch(base+path,{method,headers:{Authorization:'Bearer '+config.token,...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined,redirect:'error',signal:controller.signal});}catch{throw new Error(controller.signal.aborted?'O servidor demorou para responder. Tente novamente.':'Não foi possível acessar o servidor. Confira o endereço e sua conexão com a internet.');}
+  let result:any;try{result=await response.json();}catch{throw new Error(controller.signal.aborted?'O servidor demorou para responder. Tente novamente.':'O endereço não respondeu como uma API do Financeiro.');}
+  if(!response.ok)throw new Error(messages[result.error]||'Integração indisponível ('+response.status+').');return result;
+ })(),deadline]);}finally{if(timer)clearTimeout(timer);}
 }
 export function assertConnectionOwner(localScope:string|null|undefined,candidateScope:string){if(localScope&&localScope!==candidateScope)throw new Error('Este aparelho possui dados de outra pessoa. Use o arquivo de configuração correspondente à mesma pessoa.');}
 export async function connectWorker(config:WorkerConfig,localScope?:string):Promise<ConnectionStatus>{
