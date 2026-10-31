@@ -10,6 +10,8 @@ Aplicativo Android desenvolvido em React Native e TypeScript, com SQLite no apar
 
 **[Galeria completa](docs/funcionalidades.md)** · **[Tema claro](docs/funcionalidades-claro.md)** · **[Tema escuro](docs/funcionalidades-escuro.md)** · **[Guia completo do servidor próprio](docs/servidor-proprio.md)** · **[Aplicativo Android](mobile/README.md)** · **[Backend](backend/README.md)**
 
+> **0.3.51:** corrige o fechamento dos botões introduzido na 0.3.50 e acrescenta o ícone próprio de notificações. Se necessário, instale o APK mais recente por cima, sem limpar os dados.
+
 ## Movimento e navegação
 
 A versão 0.3.50 acrescenta o conjunto **Fluido**, com cartões em **Leque**: deslize lateralmente ou use as setas e os indicadores para trocar de cartão. Os gastos por pessoa abrem suavemente ao tocar na linha; a seta de perfil mantém seu acesso separado.
