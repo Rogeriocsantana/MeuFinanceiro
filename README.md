@@ -22,6 +22,12 @@ Na versão 0.3.55, as páginas mantêm títulos, cartões, gráficos e itens na 
 
 > Demonstração web do componente nativo, com dados fictícios. No Android, o cartão acompanha o gesto de deslizar.
 
+## Planejar o futuro
+
+Em **Mais → Futuro**, escolha uma data para separar o dinheiro previsto nas contas das posições em cofrinhos, investimentos e valores ainda a receber. Ajuste aportes, taxas mensais hipotéticas, percentual de recebimento dos empréstimos e compromissos incluídos. As taxas começam em zero; o app não promete rendimentos.
+
+Aportes saem das contas e entram nas posições, sem aumentar o total por si só. O principal de empréstimos permanece separado dos juros futuros. **Salvar minhas hipóteses** guarda apenas a configuração do cenário; a simulação não registra movimentações, pagamentos ou quitações.
+
 ## Atualizações do aplicativo
 
 Baixe o APK em [Releases](https://github.com/Rogeriocsantana/MeuFinanceiro/releases). A partir da versão 0.3.38, o aplicativo avisa no topo quando houver uma versão mais nova. Consulte o [guia de atualizações](docs/atualizacoes.md).
