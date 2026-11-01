@@ -49,3 +49,14 @@ export function cardBillPaymentSummary(data:LocalBankData,bill:BankRecord,receip
  const manualPaid=receipts.filter(r=>r.direction==='bill-payment'&&r.controlId===bill.id&&r.date<=asOf).reduce((n,r)=>n+r.amountCents,0);
  const paidCents=Math.max(officialPaid,cardPaid,manualPaid);return {paidCents,pendingCents:Math.max(0,bill.amountCents-paidCents)};
 }
+
+/** The active billing cycle can be open before the provider publishes its bill record. */
+export function unbilledInvoiceStatus(data:LocalBankData,card:BankRecord,month:string,controls:Control[]=[],asOf=new Date().toISOString().slice(0,10),summary=cardInvoice(data,card,month,controls)){
+ if(summary.totalCents===null)return 'Sem fatura';
+ const closing=cardBillingDates(data,card,month,controls).closing;
+ if(!closing)return 'Prévia';
+ const previous=new Date(Number(month.slice(0,4)),Number(month.slice(5,7))-2,15,12),previousMonth=previous.getFullYear()+'-'+String(previous.getMonth()+1).padStart(2,'0'),previousClosing=cardBillingDates(data,card,previousMonth,controls).closing;
+ const recorded=summary.rows.some(row=>!row.metadata.installmentProjection);
+ if(closing<=asOf)return recorded?'Fechada':'Prévia';
+ return previousClosing&&previousClosing<=asOf?'Em aberto':'Prévia';
+}
