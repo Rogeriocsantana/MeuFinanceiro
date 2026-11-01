@@ -16,7 +16,7 @@ Aplicativo Android desenvolvido em React Native e TypeScript, com SQLite no apar
 
 A versão 0.3.50 acrescenta o conjunto **Fluido**, com cartões em **Leque**: deslize lateralmente ou use as setas e os indicadores para trocar de cartão. Os gastos por pessoa abrem suavemente ao tocar na linha; a seta de perfil mantém seu acesso separado.
 
-As telas têm entradas curtas em sequência, respostas ao toque, transições de seleção, destaque de campos, gráficos e avisos animados. Os painéis abrem e fecham com movimento suave. O cartão acompanha o gesto com uma leve inclinação e reflexo. Os efeitos respeitam a opção de reduzir animações do sistema. As informações e funções existentes permanecem disponíveis.
+Na versão 0.3.55, as páginas mantêm títulos, cartões, gráficos e itens na posição final desde a abertura, sem entrada automática. Os movimentos ficam nas interações: resposta ao toque, seleção, foco de campos, abertura de painéis e troca dos cartões em Leque. O cartão acompanha o gesto com leve inclinação e reflexo. Os efeitos respeitam a redução de movimento do sistema. As informações e funções existentes permanecem disponíveis.
 
 <p align="center"><img src="docs/media/claro/motion-leque.png" width="300" alt="Cartões em Leque com movimento Fluido"></p>
 

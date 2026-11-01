@@ -1,3 +1,4 @@
+import {cachedControls} from '../data/controlSnapshot';
 import FinancialInsights from './FinancialInsights';
 import {PersonAvatar} from './PersonAvatar';
 import {transactionDisplayDate} from '../data/transactionDates';
@@ -47,7 +48,7 @@ export default function LiveFinanceScreens(props:Props){
  return <LiveOverviewScreens {...props}/>;
 }
 function LiveOverviewScreens({preferences,page,data,nav,reload,month,picker,onMonth,basis='Fatura',sameDay=true,balanceHidden,onToggleBalance}:Props){
- const [stored,setStored]=useState<Control[]>([]),[selectedCard,setSelectedCard]=useState(''),[editing,setEditing]=useState<BankRecord|null>(null),[batch,setBatch]=useState<string[]>(),[details,setDetails]=useState(false),[highlight,setHighlight]=useState(''),[expanded,setExpanded]=useState<string[]>([]),[sheet,setSheet]=useState(''),[values,setValues]=useState<Record<string,string>>({}),[error,setError]=useState(''),[draftLimits,setDraftLimits]=useState<Record<string,string>>({}),[addingLimit,setAddingLimit]=useState(false),[reserveName,setReserveName]=useState('');
+ const [stored,setStored]=useState<Control[]>(()=>cachedControls(data.scope)),[selectedCard,setSelectedCard]=useState(''),[editing,setEditing]=useState<BankRecord|null>(null),[batch,setBatch]=useState<string[]>(),[details,setDetails]=useState(false),[highlight,setHighlight]=useState(''),[expanded,setExpanded]=useState<string[]>([]),[sheet,setSheet]=useState(''),[values,setValues]=useState<Record<string,string>>({}),[error,setError]=useState(''),[draftLimits,setDraftLimits]=useState<Record<string,string>>({}),[addingLimit,setAddingLimit]=useState(false),[reserveName,setReserveName]=useState('');
  const refresh=async()=>{setStored(await listControls());await reload();};useEffect(()=>{void listControls().then(setStored);},[data,page.key]);
  const invoiceCache=useMemo(()=>new Map<string,ReturnType<typeof cardInvoice>>(),[data,stored]);
  const cachedInvoice=(c:BankRecord,m:string)=>{const key=c.itemId+':'+c.accountId+':'+m;let value=invoiceCache.get(key);if(!value){value=cardInvoice(data,c,m,stored);invoiceCache.set(key,value);}return value;};
