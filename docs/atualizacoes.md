@@ -1,5 +1,20 @@
 # Atualizações pelo GitHub
 
+## Atualização com o app fechado na versão 0.3.57
+
+O agendamento do Android passa a verificar a cada **no mínimo 15 minutos**, enquanto a importação continua respeitando o intervalo salvo no Perfil. Uma tentativa que falha não precisa aguardar outro intervalo inteiro de 720 ou 1440 minutos para ser tentada novamente. A migração recria uma vez o agendamento antigo: o registro de uma tarefa já existente retornava sem atualizar seu agendamento nesta versão da biblioteca. Abrir o app depois da migração não reinicia o agendamento.
+
+Com **Dados bancários atualizados** ativado em Notificações, uma tentativa concluída em segundo plano gera um aviso mesmo sem novos movimentos. O aviso separa **Open Finance** e **D1**. Falhas também geram um aviso, limitado a uma ocorrência por janela de seis horas para evitar repetição a cada tentativa. Lembretes e alertas são preparados mesmo se o Open Finance falhar ou houver vínculos aguardando conferência. Isso não altera quitações, recebimentos ou decisões de vínculo.
+
+Em **Mais → Perfil → Diagnóstico deste aparelho**, confira o intervalo registrado, o resultado da execução e eventuais erros de preparação dos avisos. O botão **Permitir execução em segundo plano** abre as configurações do app. No Poco, confira **Bateria → Sem restrições** e a permissão de **Inicialização automática**, quando disponível.
+
+Para testar, instale a versão, abra uma vez, salve temporariamente **15 minutos** no Perfil e ative **Dados bancários atualizados** em Notificações. Saia pelo botão Início e deixe o celular com rede, sem abrir o Financeiro nem tocar em Atualizar. Aguarde a execução e confira o aviso; depois consulte o diagnóstico. Reponha seu intervalo habitual após o teste. A execução real no Poco ainda precisa desse teste: os testes automatizados não provam o comportamento do fabricante.
+
+O Android controla o horário e pode adiar o trabalho por bateria ou rede. **Forçar parada** impede a execução até reabrir o app. O app consulta os dados disponíveis na integração; não obriga o banco a disponibilizar compras recentes.
+
+Validação: 237 testes aprovados e TypeScript sem erros, incluindo execução sem tela montada, aviso sem novos movimentos, falha com D1 independente, migração do agendamento e deduplicação dos avisos.
+
+
 ## Recuperação de requisições e diagnóstico na versão 0.3.49
 
 O limite de 25 segundos agora cobre a requisição inteira, inclusive a leitura do corpo JSON. Antes, o temporizador era encerrado ao receber os cabeçalhos: uma resposta incompleta poderia manter a sincronização pendente. O limite também retorna erro quando a implementação nativa não encerra a promessa após o pedido de cancelamento.

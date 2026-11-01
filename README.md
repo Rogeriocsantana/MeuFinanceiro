@@ -1,5 +1,8 @@
 # Financeiro
 
+
+**Versão 0.3.57:** atualização em segundo plano com nova tentativa sem aguardar outro intervalo inteiro, aviso com resultado separado do Open Finance e D1 e atalho para configurar a execução no Android. [Como configurar e testar](docs/atualizacoes.md#atualização-com-o-app-fechado-na-versão-0357).
+
 **Organização financeira pessoal, do saldo de hoje às parcelas dos próximos meses.**
 
 Aplicativo Android desenvolvido em React Native e TypeScript, com SQLite no aparelho, integração Open Finance via Pluggy e servidor configurável. Reúne contas, cartões, compras compartilhadas, empréstimos, receitas, reservas e análises por categoria.

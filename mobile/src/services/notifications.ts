@@ -1,3 +1,4 @@
+import {backgroundOutcomeText,type BackgroundOutcome} from './backgroundOutcome';
 import {controlAlertEvents} from '../data/controlAlerts';
 import {loadInsightState} from '../data/insightState';
 import {providerDay} from '../data/pluggyModel';
@@ -50,3 +51,19 @@ export function onNotificationOpen(navigate:(page:string,name?:string)=>void){
 }
 
 export async function sendTestNotification(){await configureNotifications(true);await Notifications.scheduleNotificationAsync({identifier:'financeiro-test-'+Date.now(),content:{title:'Notificações do Financeiro',body:'Este é um teste dos avisos deste aparelho.',data:{page:'home'}},trigger:Platform.OS==='android'?{channelId:channel}:null});}
+
+/** A completed background attempt is visible even when no new bank movement arrived. */
+export async function notifyBackgroundRefresh(scope:string,result:BackgroundOutcome,startedAt:string){
+ if(Platform.OS==='web')return;const preferences=await loadAppPreferences(scope);
+ if(!preferences.notifications.enabled||!preferences.notifications.types.includes('bank-updated')||!(await Notifications.getPermissionsAsync()).granted)return;
+ const failed=result.bank==='failed'||result.remote==='failed'||!!result.notificationError;
+ // Repeated failures retry every wake-up, but warn at most once per six-hour window.
+ const stamp=failed?'failure-'+Math.floor(Date.parse(startedAt)/(6*3600000)):startedAt;
+ const id=notificationPrefix(scope)+'background-'+stamp;
+ if(!await recordDeviceEvent(scope,id,{at:new Date().toISOString()}))return;
+ try{if(Platform.OS==='android')await Notifications.setNotificationChannelAsync(channel,{name:'Lembretes financeiros',importance:Notifications.AndroidImportance.DEFAULT});await Notifications.scheduleNotificationAsync({identifier:id,content:{title:failed?'Atualização automática precisa de atenção':'Atualização automática concluída',body:backgroundOutcomeText(result),data:{page:'home'}},trigger:Platform.OS==='android'?{channelId:channel}:null});}catch(e){await forgetDeviceEvent(scope,id);throw e;}
+}
+export async function openBackgroundSettings(){
+ if(Platform.OS!=='android')return Linking.openSettings();
+ await Linking.openSettings();
+}
