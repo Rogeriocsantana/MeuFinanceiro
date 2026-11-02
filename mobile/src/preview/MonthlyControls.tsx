@@ -1,3 +1,4 @@
+import {cachedControls,hasControlSnapshot} from '../data/controlSnapshot';
 import {validateControlLimits} from './controlLimits';
 import {FloatingAdd} from './FloatingAdd';
 import React,{useEffect,useState} from 'react';
@@ -13,7 +14,7 @@ import {parseMoneyCents} from './formValues';
 import {listControls,saveControl,type Control} from '../data/localControls';
 import {resolveCategories} from '../data/settingsModel';
 export default function MonthlyControls({scope,startAdding=false,editName,nav}:{scope:string;startAdding?:boolean;editName?:string;nav:(key:string,name?:string)=>void}){
- const [stored,setStored]=useState<Control[]>([]),[ready,setReady]=useState(false),[stage,setStage]=useState(''),[category,setCategory]=useState(''),[value,setValue]=useState(''),[alert,setAlert]=useState(false),[original,setOriginal]=useState(''),[error,setError]=useState(''),[confirm,setConfirm]=useState(false);
+ const [stored,setStored]=useState<Control[]>(()=>cachedControls(scope)),[ready,setReady]=useState(()=>hasControlSnapshot(scope)),[stage,setStage]=useState(''),[category,setCategory]=useState(''),[value,setValue]=useState(''),[alert,setAlert]=useState(false),[original,setOriginal]=useState(''),[error,setError]=useState(''),[confirm,setConfirm]=useState(false);
  const settings=stored.find(c=>c.id==='monthly-limits'),limits=(settings?.limits||{}) as Record<string,string>,alerts=(settings?.controlAlerts||{}) as Record<string,boolean>;
  const reload=async()=>{const all=await listControls();setStored(all);return all;};
  const edit=(name:string,all=stored)=>{const s=all.find(c=>c.id==='monthly-limits');setCategory(name);setOriginal(name);setValue(String((s?.limits as any)?.[name]||''));setAlert(Boolean((s?.controlAlerts as any)?.[name]));setError('');setConfirm(false);setStage('edit');};

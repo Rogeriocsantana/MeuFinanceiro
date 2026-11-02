@@ -1,3 +1,4 @@
+import {cachedControls} from '../data/controlSnapshot';
 import AutomationStatus from './AutomationStatus';
 import React,{useEffect,useRef,useState} from 'react';
 import {Linking,Switch,DeviceEventEmitter} from 'react-native';
@@ -20,9 +21,9 @@ import {configureAutomaticRefresh} from '../services/bankAutomation';
 
 const groups=[{title:'Gestão financeira',rows:[['Pessoas e valores a receber','Cartão e empréstimos','people','users'],['Empréstimos','Parcelas e recebimentos','loans','file'],['Patrimônio','Investimentos e cofrinhos','assets','chart'],['Receitas e rendimentos','Entradas e comparação por origem','income','income'],['Resumo do mês','Receitas e gastos em conjunto','monthly-summary','file'],['Gastos por dia','Calendário das suas compras','daily-heat','chart']]},{title:'Ferramentas',rows:[['Lançamentos','Movimentos e classificação','transactions','list'],['Parcelamentos','Compras de todos os cartões','installments','card'],['Futuro','Planejar uma data','future','calendar'],['Contas recorrentes','Cobranças fixas e variáveis','recurring-overview','calendar']]},{title:'Configurações',rows:[['Categorias','Organize suas classificações','categories','tag'],['Regras automáticas','Critérios para novos movimentos','rules','gear'],['Open Finance e importações','Conexões e período do histórico','imports','refresh'],['Integrações','Servidor, sincronização e backup','integrations','cloud'],['Notificações','Escolha os avisos do aplicativo','notifications','bell'],['Alertas dos controles','Limites com aviso ativado','budget-alerts','bell']]}];
 export default function ProfileScreens({page,data,preferences,onPreferences,nav}:{page:string;data:LocalBankData|null;preferences:AppPreferences;onPreferences:(value:AppPreferences)=>void;nav:(key:string,name?:string)=>void}){
- const {dark,toggle}=useTheme(),[draft,setDraft]=useState(preferences),[stored,setStored]=useState<Control[]>([]),[error,setError]=useState(''),[saved,setSaved]=useState('');
+ const {dark,toggle}=useTheme(),[draft,setDraft]=useState(preferences),[stored,setStored]=useState<Control[]>(()=>cachedControls(data?.scope||'')),[error,setError]=useState(''),[saved,setSaved]=useState('');
  const previousPreferences=useRef(preferences),draftRef=useRef(draft);draftRef.current=draft;
- useEffect(()=>{const previous=previousPreferences.current;previousPreferences.current=preferences;setDraft(current=>JSON.stringify(current)===JSON.stringify(previous)?preferences:current);},[preferences]);useEffect(()=>{void listControls().then(setStored).catch(()=>{});},[data?.syncedAt]);
+ useEffect(()=>{const previous=previousPreferences.current;previousPreferences.current=preferences;setDraft(current=>JSON.stringify(current)===JSON.stringify(previous)?preferences:current);},[preferences]);useEffect(()=>{let live=true;void listControls().then(all=>{if(live)setStored(all);}).catch(()=>{});return()=>{live=false;};},[data?.scope,data?.syncedAt]);
  const scope=data?.scope||'device-profile',wealth=data?wealthSummary(data,stored):null;
  const save=async(next:AppPreferences)=>{setError('');setSaved('');try{
   const value=await saveAppPreferences(scope,next);onPreferences(value);setDraft(value);

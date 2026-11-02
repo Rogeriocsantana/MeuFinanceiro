@@ -1,3 +1,4 @@
+import {cachedControls} from '../data/controlSnapshot';
 import {isBankBillSettlement} from '../data/bankOverview';
 import {transactionIsClassified,transactionHasFinancialEvent} from './BankTransactionList';
 import {cardInvoiceMonth} from '../data/cardInvoice';
@@ -24,9 +25,9 @@ import {bankPresentation} from './institutions';
 import type {LocalBankData} from '../data/pluggyModel';
 
 export default function PurchaseScreens({page,data,month,picker,nav,reload,preferences}:{preferences:AppPreferences;page:{key:string;name?:string};data:LocalBankData;month:string;picker:React.ReactNode;nav:(key:string,name?:string)=>void;reload:()=>Promise<void>}){
- const [controls,setControls]=useState<Control[]>([]),[person,setPerson]=useState('all'),[panel,setPanel]=useState(''),[label,setLabel]=useState(''),[owner,setOwner]=useState('self'),[error,setError]=useState(''),[classification,setClassification]=useState(false),[personName,setPersonName]=useState(''),[expanded,setExpanded]=useState<string[]>([]),[closedDays,setClosedDays]=useState<string[]>([]),[searchOpen,setSearchOpen]=useState(false),[query,setQuery]=useState('');
+ const [controls,setControls]=useState<Control[]>(()=>cachedControls(data?.scope||'')),[person,setPerson]=useState('all'),[panel,setPanel]=useState(''),[label,setLabel]=useState(''),[owner,setOwner]=useState('self'),[error,setError]=useState(''),[classification,setClassification]=useState(false),[personName,setPersonName]=useState(''),[expanded,setExpanded]=useState<string[]>([]),[closedDays,setClosedDays]=useState<string[]>([]),[searchOpen,setSearchOpen]=useState(false),[query,setQuery]=useState('');
  useEffect(()=>{setPerson('all');},[month,page.name]);
- useEffect(()=>{void listControls().then(setControls);},[data]);
+ useEffect(()=>{let live=true;void listControls().then(all=>{if(live)setControls(all);}).catch(()=>{});return()=>{live=false;};},[data]);
  const people=useMemo(()=>controls.filter(c=>c.type==='people'&&!c.disabled).sort((a,b)=>a.name.localeCompare(b.name,'pt-BR',{sensitivity:'base',numeric:true})),[controls]),categories=useMemo(()=>resolveCategories(controls),[controls]),record=data.records.find(r=>r.id===page.name&&r.kind==='transaction'),annotation=record?data.annotations[record.id]||{}:{},derived=useMemo(()=>page.key==='installments'?[]:deriveObligations(data,controls),[data,controls,page.key]);
  const groups=useMemo(()=>page.key==='installments'?installmentPurchases(data,controls).filter(g=>!page.name||g.accountId===page.name):[],[data,controls,page.key,page.name]);
  const presentedGroups=useMemo(()=>groups.map(group=>{const participants=purchaseParticipants(data,group.installments.map(p=>p.record),people),labels=[...new Set(group.installments.map(p=>{const id=data.annotations[p.record.id]?.categoryId;const category=categories.find(c=>c.id===id);return category?categoryLabel(category,categories):'A classificar';}))];return {...group,participants,categorySummary:labels.length===1?labels[0]!:labels.includes('A classificar')?labels.filter(l=>l!=='A classificar').join(' · ')+' · classificação parcial':'Categorias: '+labels.join(' · ')};}),[groups,data,people,categories]);

@@ -1,7 +1,7 @@
 # Financeiro
 
 
-**Versão 0.3.59:** cartões opacos na troca em Leque, com uma animação nativa coordenada e gestos estáveis durante atualizações da tela. [Detalhes e validação](docs/atualizacoes.md#cartões-opacos-e-troca-coordenada-na-versão-0359).
+**Versão 0.3.60:** revisão de animações e rolagem em todo o app, mantendo o layout e as funções existentes. [Auditoria, correções e testes no Android](docs/auditoria-movimento-0.3.60.md).
 
 **Organização financeira pessoal, do saldo de hoje às parcelas dos próximos meses.**
 

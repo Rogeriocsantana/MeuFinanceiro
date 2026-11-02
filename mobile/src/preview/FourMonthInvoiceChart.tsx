@@ -1,5 +1,5 @@
 import {MotionEntry} from './AppMotion';
-import React,{useId,useMemo,useState} from 'react';
+import React,{useId,useMemo,useRef,useCallback,useState} from 'react';
 import {PanResponder,Platform,Vibration} from 'react-native';
 import {ClipPath} from 'react-native-svg';
 import {View,TouchableOpacity} from './ThemePrimitives';
@@ -12,8 +12,9 @@ export default function FourMonthInvoiceChart({values,labels,selected,onSelect,s
  const kind=(i:number)=>/paga|fechada/i.test(statuses[i]||'')?'closed':/aberto/i.test(statuses[i]||'')?'open':'future';
  const color=(i:number)=>kind(i)==='closed'?C.green:kind(i)==='open'?C.blue:C.muted;
  const amountLabel=(i:number)=>values[i]===null?'—':money(values[i]!);
- const select=(index:number)=>{if(index<0||index>=values.length||index===selected||values[index]===null)return;if(Platform.OS==='android')Vibration.vibrate(8);onSelect(index);};
- const pan=useMemo(()=>PanResponder.create({onMoveShouldSetPanResponder:(_e,g)=>Math.abs(g.dx)>12&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,onPanResponderRelease:(_e,g)=>{if(Math.abs(g.dx)>30)select(selected+(g.dx<0?1:-1));}}),[selected,onSelect,values.length]);
+ const live=useRef({values,selected,onSelect});live.current={values,selected,onSelect};
+ const select=useCallback((index:number)=>{const state=live.current;if(index<0||index>=state.values.length||index===state.selected||state.values[index]===null)return;if(Platform.OS==='android')Vibration.vibrate(8);state.onSelect(index);},[]);
+ const pan=useMemo(()=>PanResponder.create({onMoveShouldSetPanResponder:(_e,g)=>Math.abs(g.dx)>12&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,onPanResponderRelease:(_e,g)=>{if(Math.abs(g.dx)>30)select(live.current.selected+(g.dx<0?1:-1));}}),[select]);
  const max=Math.max(1,...values.map(v=>v??0)),min=Math.min(...values.filter((v):v is number=>v!==null)),range=Math.max(1,max-(Number.isFinite(min)?min:0)),points=values.map((v,i)=>({x:i*(column+gap)+column/2,y:v===null?135:84+(max-v)/range*52}));
  const segment=(i:number,j:number)=>{const a=points[i]!,b=points[j]!,mid=(a.x+b.x)/2;return `M ${a.x} ${a.y} C ${mid} ${a.y},${mid} ${b.y},${b.x} ${b.y}`;};
  const start=points[0]!,end=points[3]!;

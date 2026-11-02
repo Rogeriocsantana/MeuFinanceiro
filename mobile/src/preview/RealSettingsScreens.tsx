@@ -1,3 +1,4 @@
+import {cachedControls} from '../data/controlSnapshot';
 import {FloatingAdd} from './FloatingAdd';
 import {bankPresentation,institutionIdentity} from './institutions';
 import React,{useEffect,useState} from 'react';
@@ -22,11 +23,11 @@ const between={flexDirection:'row' as const,alignItems:'center' as const,justify
 function Group({name,count,onEdit,children,last=false}:{name:string;count:number;onEdit:()=>void;children:React.ReactNode;last?:boolean}){const [expanded,setExpanded]=useState(false);return <View style={{borderBottomWidth:last?0:1,borderBottomColor:C.line}}><View style={{flexDirection:'row',alignItems:'center',gap:5,paddingVertical:12}}><TouchableOpacity accessibilityRole="button" accessibilityLabel={'Expandir '+name} onPress={()=>setExpanded(!expanded)} style={{flex:1,minHeight:44,justifyContent:'center'}}><Text style={[u.rowTitle,{fontWeight:'600'}]}>{name}</Text></TouchableOpacity><Text style={u.small}>{count} subcategorias</Text><TouchableOpacity accessibilityRole="button" accessibilityLabel={'Expandir subcategorias de '+name} onPress={()=>setExpanded(!expanded)} style={{width:24,height:44,alignItems:'center',justifyContent:'center'}}><RotatingChevron expanded={expanded}/></TouchableOpacity><IconButton icon="edit" label={'Editar '+name} onPress={onEdit}/></View>{expanded&&children}</View>;}
 const icon=(name:string)=>/mercado/i.test(name)?'cart':/alimenta|açougue|restaurante|delivery/i.test(name)?'food':/casa|aluguel/i.test(name)?'home':'bag';
 export default function RealSettingsScreens({data,page,reload}:Props){
- const [controls,setControls]=useState<Control[]>([]),[form,setForm]=useState<''|'categories'|'rules'>(''),[editing,setEditing]=useState<CategoryControl|RuleControl>(),[values,setValues]=useState<Record<string,string>>({}),[error,setError]=useState(''),[expanded,setExpanded]=useState<string[]>([]),[showDisabled,setShowDisabled]=useState(false);
+ const [controls,setControls]=useState<Control[]>(()=>cachedControls(data?.scope||'')),[form,setForm]=useState<''|'categories'|'rules'>(''),[editing,setEditing]=useState<CategoryControl|RuleControl>(),[values,setValues]=useState<Record<string,string>>({}),[error,setError]=useState(''),[expanded,setExpanded]=useState<string[]>([]),[showDisabled,setShowDisabled]=useState(false);
  const [preview,setPreview]=useState<{title:string;subtitle:string;run:()=>Promise<void>}|null>(null);
  const [personCreate,setPersonCreate]=useState(false);
  const [returnRule,setReturnRule]=useState<{editing?:CategoryControl|RuleControl;values:Record<string,string>}|null>(null);
- const refresh=async()=>{setControls(await listControls());};useEffect(()=>{void refresh();},[data.syncedAt]);
+ const refresh=async()=>{setControls(await listControls());};useEffect(()=>{let live=true;void listControls().then(all=>{if(live)setControls(all);}).catch(()=>{});return()=>{live=false;};},[data.scope,data.syncedAt]);
  const categories=resolveCategories(controls as any),active=categories.filter(c=>!c.disabled),rules=controls.filter(c=>c.type==='rules') as unknown as RuleControl[];
  const update=(name:string,value:string)=>setValues(v=>({...v,[name]:value,...(name==='Pessoa (compra inteira no cartão)'?{personId:controls.find(c=>c.type==='people'&&c.name===value)?.id||''}:{})}));
  const openCategory=(record?:CategoryControl)=>{setEditing(record);setValues({Nome:record?.name||'',Tipo:record?.kind==='INCOME'?'Receita':record?.kind==='BOTH'?'Receita e despesa':'Despesa','Classificação principal':String(record?.isGroup||false),'Categoria principal':record?.parentKey||'Nenhuma'});setError('');setForm('categories');};

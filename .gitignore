@@ -6,6 +6,7 @@
 /docs/*
 !/docs/servidor-proprio.md
 !/docs/atualizacoes.md
+!/docs/auditoria-movimento-0.3.60.md
 !/docs/funcionalidades.md
 !/docs/funcionalidades-claro.md
 !/docs/funcionalidades-escuro.md

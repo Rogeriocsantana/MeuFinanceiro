@@ -1,5 +1,12 @@
 # Atualizações pelo GitHub
 
+## Auditoria de animações na versão 0.3.60
+
+Corrige a restauração tardia da rolagem, a entrada de painéis após carregar preferências, o fade de linhas nas expansões, a troca de opacidade dos meses, os nós de animação recriados durante edição e a ancoragem de seletores no Android. A barra de carregamento passa a acompanhar somente operações reais. Telas de resumo, controles, compras e configurações já começam com o snapshot local da conexão. O destaque do gráfico também passa a corresponder ao setor efetivamente tocado.
+
+Mantém o layout e as funções existentes. Validação: TypeScript, 245 testes automatizados e percurso de 35 telas no emulador Android, com testes interativos de rolagem/volta, atualização, grupos, meses, painéis, teclado, filtros e gráficos. [Relatório e limites da validação](auditoria-movimento-0.3.60.md).
+
+
 ## Cartões opacos e troca coordenada na versão 0.3.59
 
 A troca em Leque mantém as faces dos cartões opacas. Uma única animação nativa coordena o cartão que sai e a subida dos demais; a conclusão vem do retorno da animação, sem um temporizador independente para remover a camada. Isso elimina a animação de transparência do cartão reutilizado na pilha.
