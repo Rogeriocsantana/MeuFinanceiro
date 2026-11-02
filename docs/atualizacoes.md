@@ -1,5 +1,17 @@
 # Atualizações pelo GitHub
 
+## Correção de abertura na versão 0.3.58
+
+A versão 0.3.57 podia fechar imediatamente com **Cannot find native module ExpoAsset**. O pacote de compilação estava sem os arquivos Gradle de alguns módulos transitivos do Expo, que por isso não entraram na lista de módulos nativos. Os arquivos foram restaurados a partir das versões exatas das dependências locais.
+
+A verificação do APK agora inspeciona a lista de módulos registrada no DEX e exige Asset, Application, Font, BackgroundTask, TaskManager, SecureStore, SQLite, SplashScreen e o agendador de notificações, além das verificações anteriores de assinatura, versão e permissões. A versão 0.3.57 foi retirada da oferta de atualização estável.
+
+Se o aplicativo não abrir, baixe o APK da 0.3.58 pela página de Releases e instale **sobre a versão atual**, sem desinstalar nem limpar os dados. A assinatura e o identificador permanecem os mesmos. Essa correção mantém os ajustes de segundo plano da 0.3.57 e não modifica o banco de dados, recebimentos ou vínculos.
+
+
+
+Validação de abertura: a variante release x86_64 foi instalada sobre a 0.3.57 no emulador, abriu a introdução e permaneceu ativa sem exceção de módulo nativo. O bundle JavaScript é idêntico ao do APK ARM64 publicado. O APK ARM64 passou na checagem de módulos registrados no DEX e assinatura original. Não foi feito teste no Poco físico nem acesso a dados bancários reais nesse teste.
+
 ## Atualização com o app fechado na versão 0.3.57
 
 O agendamento do Android passa a verificar a cada **no mínimo 15 minutos**, enquanto a importação continua respeitando o intervalo salvo no Perfil. Uma tentativa que falha não precisa aguardar outro intervalo inteiro de 720 ou 1440 minutos para ser tentada novamente. A migração recria uma vez o agendamento antigo: o registro de uma tarefa já existente retornava sem atualizar seu agendamento nesta versão da biblioteca. Abrir o app depois da migração não reinicia o agendamento.

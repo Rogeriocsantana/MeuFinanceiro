@@ -7,6 +7,14 @@ if(!fs.existsSync(apk))throw Error('APK não encontrado.');
 const signature=run(path.join(process.env.JAVA_HOME,'bin/java.exe'),['-jar',path.join(tools,'lib/apksigner.jar'),'verify','--verbose','--print-certs',apk]);
 const badging=run(path.join(tools,'aapt.exe'),['dump','badging',apk]);
 const manifest=run(path.join(tools,'aapt.exe'),['dump','xmltree',apk,'AndroidManifest.xml']);
+// A successful build and valid signature do not prove Expo modules were registered.
+const analyzer=path.join(process.env.ANDROID_HOME,'cmdline-tools/latest/bin/apkanalyzer.bat');
+const registeredModules=run(analyzer,['dex','code','--class','expo.modules.ExpoModulesPackageList$LazyHolder',apk]);
+for(const nativeModule of ['asset/AssetModule','application/ApplicationModule','font/FontLoaderModule','backgroundtask/BackgroundTaskModule','taskManager/TaskManagerModule','securestore/SecureStoreModule','sqlite/SQLiteModule','splashscreen/SplashScreenModule','notifications/notifications/scheduling/NotificationScheduler']){
+ if(!registeredModules.includes('Lexpo/modules/'+nativeModule+';'))throw Error('Módulo nativo ausente no APK: '+nativeModule);
+}
+
+
 if(!badging.includes("name='com.roger.financeiro'"))throw Error('Identidade do APK inesperada.');
 const app=JSON.parse(fs.readFileSync(path.join(root,'app.json'),'utf8')).expo;
 if(!badging.includes("versionName='"+app.version+"'")||!badging.includes("versionCode='"+app.android.versionCode+"'"))throw Error('Versão do APK divergente.');
