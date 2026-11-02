@@ -1,5 +1,14 @@
 # Atualizações pelo GitHub
 
+## Cartões opacos e troca coordenada na versão 0.3.59
+
+A troca em Leque mantém as faces dos cartões opacas. Uma única animação nativa coordena o cartão que sai e a subida dos demais; a conclusão vem do retorno da animação, sem um temporizador independente para remover a camada. Isso elimina a animação de transparência do cartão reutilizado na pilha.
+
+Os nós de transformação e os manipuladores de gesto permanecem estáveis durante renderizações com dados atualizados. Toques durante uma troca são ignorados até a conclusão; mudanças na lista cancelam a transição antiga. A redução de movimento do Android continua respeitada. O layout e as funções das telas são preservados.
+
+Validação: TypeScript e 239 testes passaram, incluindo trocas repetidas, bloqueio de toques concorrentes, redução de movimento e alteração de cartões durante a transição. O componente real foi conferido no emulador Android com dados fictícios, temas claro/escuro e renderizações a cada 200 ms; foram capturados o meio e o fim da troca e testados gestos para os dois lados. Isso não substitui a confirmação no Poco físico. O cenário de teste não integra o APK público.
+
+
 ## Correção de abertura na versão 0.3.58
 
 A versão 0.3.57 podia fechar imediatamente com **Cannot find native module ExpoAsset**. O pacote de compilação estava sem os arquivos Gradle de alguns módulos transitivos do Expo, que por isso não entraram na lista de módulos nativos. Os arquivos foram restaurados a partir das versões exatas das dependências locais.

@@ -1,0 +1,21 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript');
+function fixture(reduced=false){
+ const hooks=[],effects=[],animations=[],selections=[];let cursor=0,tree,props;const react={createElement:(type,props,...children)=>({type,props:props||{},children}),useRef:init=>{const i=cursor++;return hooks[i]??={current:init}},useState:init=>{const i=cursor++;if(!(i in hooks))hooks[i]=init;return[hooks[i],next=>hooks[i]=typeof next==='function'?next(hooks[i]):next]},useMemo:(fn,deps)=>{const i=cursor++,old=hooks[i];if(!old||deps.some((v,j)=>v!==old.deps[j]))hooks[i]={deps,value:fn()};return hooks[i].value},useEffect:(fn,deps)=>{const i=cursor++,old=hooks[i];if(!old||deps.some((v,j)=>v!==old.deps[j])){effects.push(()=>{old?.cleanup?.();hooks[i]={deps,cleanup:fn()}})}}};
+ class Value{constructor(value){this.value=value}setValue(value){this.value=value}stopAnimation(){}interpolate(config){return {config,interpolate:config=>({config})}}}
+ const rn={Animated:{Value,View:'AnimatedView',add:(...args)=>({add:args}),multiply:(...args)=>({multiply:args,interpolate:config=>({config})}),timing:(value,config)=>{const a={value,config,start:fn=>a.done=fn,stop:()=>a.done?.({finished:false})};animations.push(a);return a;}},Easing:{bezier:()=>0,out:()=>0,cubic:0},PanResponder:{create:handlers=>({panHandlers:handlers})},useWindowDimensions:()=>({width:400})};
+ const mocks={react,'react-native':rn,'./ThemePrimitives':{View:'View',TouchableOpacity:'Button'},'./ui':{C:{blue:'blue',line:'line'},Icon:'Icon'},'./institutions':{bankPresentation:card=>({title:card.name})},'./BankCardFace':{__esModule:true,default:'Face'},'./AppMotion':{useReducedMotion:()=>reduced,FLUID_DURATION:320},'react-native-svg':{__esModule:true,default:'Svg',Defs:'Defs',LinearGradient:'Gradient',Stop:'Stop',Rect:'Rect'}};
+ const m={exports:{}};new Function('require','exports','module',ts.transpileModule(fs.readFileSync('src/preview/BankCardCarousel.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.React,esModuleInterop:true}}).outputText)(n=>mocks[n]||require(n),m.exports,m);
+ props={cards:[{id:'a',accountId:'a',name:'A'},{id:'b',accountId:'b',name:'B'}],selected:'a',name:'Pessoa',limit:()=>null,onSelect:id=>{selections.push(id);props={...props,selected:id}}};
+ const render=()=>{cursor=0;tree=m.exports.default(props);while(effects.length)effects.shift()();return tree};
+ const nodes=(node=tree)=>!node||typeof node!=='object'?[]:[node,...(node.children||[]).flat(Infinity).flatMap(n=>nodes(n))];
+ return{render,nodes,animations,selections,button:label=>nodes().find(n=>n.props.accessibilityLabel===label),finish:()=>{for(const a of animations.splice(0)){a.value.setValue(a.config.toValue);a.done?.({finished:true})}},layers:()=>nodes().filter(n=>typeof n.type==='function').map(n=>n.type(n.props)),setCards:cards=>props={...props,cards}};
+}
+
+test('trocas repetidas mantêm faces opacas e usam conclusão nativa, sem depender de temporizador',()=>{
+ const f=fixture();for(let i=0;i<8;i++){f.render();f.button('Próximo cartão').props.onPress();f.render();const layers=f.layers();assert.equal(layers.length,2);for(const layer of layers){assert.equal(layer.props.style.opacity,undefined);assert.equal(layer.props.pointerEvents,'none');}assert.equal(f.animations.length,1);assert.equal(f.animations[0].config.useNativeDriver,true);f.button('Mostrar cartão 1').props.onPress();assert.equal(f.selections.length,i+1,'toques durante a troca são ignorados');f.finish();f.render();for(const layer of f.layers())assert.equal(layer.props.style.opacity,undefined);}
+ assert.deepEqual(f.selections,['b','a','b','a','b','a','b','a']);
+});
+test('redução de movimento troca direto e alterações de dados encerram animação pendente',()=>{
+ const f=fixture(true);f.render();f.button('Próximo cartão').props.onPress();f.render();assert.deepEqual(f.selections,['b']);assert.equal(f.animations.length,0);
+ const g=fixture();g.render();g.button('Próximo cartão').props.onPress();g.render();g.setCards([{id:'b',accountId:'b',name:'B'}]);g.render();g.render();assert.equal(g.button('Próximo cartão').props.disabled,true);assert.equal(g.layers()[0].props.style.opacity,undefined);
+});

@@ -1,7 +1,7 @@
 # Financeiro
 
 
-**Versão 0.3.58:** corrige o fechamento ao abrir causado pela ausência do módulo nativo ExpoAsset. Mantém: atualização em segundo plano com nova tentativa sem aguardar outro intervalo inteiro, aviso com resultado separado do Open Finance e D1 e atalho para configurar a execução no Android. [Como configurar e testar](docs/atualizacoes.md#atualização-com-o-app-fechado-na-versão-0357).
+**Versão 0.3.59:** cartões opacos na troca em Leque, com uma animação nativa coordenada e gestos estáveis durante atualizações da tela. [Detalhes e validação](docs/atualizacoes.md#cartões-opacos-e-troca-coordenada-na-versão-0359).
 
 **Organização financeira pessoal, do saldo de hoje às parcelas dos próximos meses.**
 
