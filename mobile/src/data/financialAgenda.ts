@@ -2,7 +2,13 @@ import {cardInvoice,cardBillingDates,cardBillPaymentSummary} from './cardInvoice
 import {deriveObligations,loanLedger,controlBalance,type Control,type Reconciliation} from './localControls';
 import {recurringMonth} from './recurringInsights';
 import type {LocalBankData} from './pluggyModel';
-export type AgendaItem={id:string;name:string;date:string;amount:number;direction:'pay'|'receive';resolved:boolean;estimated:boolean;included:boolean;route:string;target?:string;detail:string};
+export type AgendaItem={id:string;name:string;date:string;amount:number;direction:'pay'|'receive';resolved:boolean;estimated:boolean;included:boolean;route:string;target?:string;detail:string;receivableKind?:'loan'|'purchase'};
+export function agendaStatusLabel(row:AgendaItem){return row.resolved?row.direction==='receive'?'Recebido':'Pago':row.direction==='receive'?'A receber':'A pagar';}
+export function agendaPeopleTotals(rows:AgendaItem[]){
+ const groups=new Map<string,{name:string;purchases:number;loans:number;total:number;count:number}>();
+ for(const row of rows){if(row.direction!=='receive'||row.resolved||row.amount<=0||!row.receivableKind)continue;const person=groups.get(row.name)||{name:row.name,purchases:0,loans:0,total:0,count:0};person[row.receivableKind==='loan'?'loans':'purchases']+=row.amount;person.total+=row.amount;person.count++;groups.set(row.name,person);}
+ return [...groups.values()].sort((a,b)=>b.total-a.total||a.name.localeCompare(b.name,'pt-BR'));
+}
 /** Read-only view of the same obligations and receipts used by cards and people. */
 export function financialAgenda(data:LocalBankData,stored:Control[],month:string){
  const controls=deriveObligations(data,stored),receipts=stored.filter(c=>c.type==='reconciliations') as unknown as Reconciliation[],rows:AgendaItem[]=[];
@@ -14,10 +20,10 @@ export function financialAgenda(data:LocalBankData,stored:Control[],month:string
  }
  for(const control of controls.filter(c=>c.type==='loans'))for(const part of loanLedger(control,receipts)){
   if(part.dueDate.slice(0,7)!==month)continue;
-  rows.push({id:'loan:'+control.id+':'+part.id,name:control.person||control.name,date:part.dueDate,amount:part.pending||part.amountCents,direction:'receive',resolved:part.pending===0,estimated:false,included:true,route:'loan',target:control.id,detail:control.name+' · parcela '+part.index});
+  rows.push({id:'loan:'+control.id+':'+part.id,name:control.person||control.name,date:part.dueDate,amount:part.pending||part.amountCents,direction:'receive',resolved:part.pending===0,estimated:false,included:true,route:'loan',target:control.id,detail:control.name+' · parcela '+part.index,receivableKind:'loan'});
  }
  for(const control of controls.filter(c=>c.type==='card-shares'&&String(c.dueDate||'').slice(0,7)===month)){
-  const balance=controlBalance(control,receipts);rows.push({id:'purchase:'+control.id,name:control.person||control.name,date:String(control.dueDate),amount:balance.pendingCents||balance.totalCents,direction:'receive',resolved:balance.pendingCents===0,estimated:false,included:true,route:'person',target:control.person,detail:control.name+' · compra a receber'});
+  const balance=controlBalance(control,receipts);rows.push({id:'purchase:'+control.id,name:control.person||control.name,date:String(control.dueDate),amount:balance.pendingCents||balance.totalCents,direction:'receive',resolved:balance.pendingCents===0,estimated:false,included:true,route:'person',target:control.person,detail:control.name+' · compra a receber',receivableKind:'purchase'});
  }
  for(const recurrence of recurringMonth(data,controls,month)){
   const card=data.records.some(r=>r.kind==='card'&&r.accountId===recurrence.accountId),confirmed=recurrence.confirmed;

@@ -1,7 +1,7 @@
 # Financeiro
 
 
-**Versão 0.3.61:** melhorias integradas às telas existentes: agenda financeira, lista compacta opcional de contas, categorias na fatura, controles com gasto e valor restante, filtros de recorrências, progresso das metas e composição do cenário no Futuro. Mantém a navegação, o gráfico de quatro meses, as comparações e os vínculos financeiros. [Como testar a atualização](docs/atualizacoes.md).
+**Versão 0.3.62:** etiquetas de status na agenda e valores a receber por pessoa no Resumo do mês, com cartão e empréstimos separados ao expandir. Mantém as melhorias integradas, o layout e os vínculos financeiros. [Como testar a atualização](docs/atualizacoes.md).
 
 **Organização financeira pessoal, do saldo de hoje às parcelas dos próximos meses.**
 

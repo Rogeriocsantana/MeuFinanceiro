@@ -1,5 +1,16 @@
 # Atualizações pelo GitHub
 
+## Agenda e resumo por pessoa na versão 0.3.62
+
+A agenda mostra uma etiqueta acima de cada compromisso: **A pagar**, **A receber**, **Pago** ou **Recebido**. Estimativas ainda pendentes recebem também **Previsto**. A data e a descrição ficam separadas do status. Os filtros e totais anteriores continuam disponíveis.
+
+O **Resumo do mês** acrescenta **A receber por pessoa**, usando apenas o saldo pendente com vencimento no mês selecionado. Toque na pessoa para expandir **Cartão a receber** e **Empréstimos a receber**. O total já desconta pagamentos parciais e exclui parcelas quitadas. O botão **Abrir pessoa** mantém o acesso aos movimentos, recebimentos e contratos existentes. Empréstimos incluem principal e juros combinados. Nenhum recebimento ou vínculo é alterado pela consulta.
+
+Esta versão não inventa compras ausentes da origem: a fatura continua incluindo lançamentos PENDING e POSTED recebidos pelo Open Finance, sem cadastrar cobranças manualmente para compensar atrasos do provedor.
+
+Validação: TypeScript e 248 testes automatizados; agenda e composição por pessoa conferidas no Android com base fictícia.
+
+
 ## Melhorias integradas na versão 0.3.61
 
 As propostas aprovadas passam a aparecer nas telas do aplicativo, mantendo as funções anteriores e os mesmos dados locais:
