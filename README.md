@@ -1,7 +1,7 @@
 # Financeiro
 
 
-**Versão 0.3.62:** etiquetas de status na agenda e valores a receber por pessoa no Resumo do mês, com cartão e empréstimos separados ao expandir. Mantém as melhorias integradas, o layout e os vínculos financeiros. [Como testar a atualização](docs/atualizacoes.md).
+**Versão 0.3.63:** agenda compacta com etiqueta junto ao nome e foto da pessoa. O resumo usa o mesmo grupo de pessoas dos cartões: toque na linha para expandir cartão e empréstimos, e na seta final para abrir a pessoa. [Como testar a atualização](docs/atualizacoes.md).
 
 **Organização financeira pessoal, do saldo de hoje às parcelas dos próximos meses.**
 

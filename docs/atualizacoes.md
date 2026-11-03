@@ -1,5 +1,14 @@
 # Atualizações pelo GitHub
 
+## Agenda compacta e interação consistente na versão 0.3.63
+
+Na **Agenda**, a etiqueta fica junto ao nome, sem uma faixa vertical reservada acima de cada lançamento. Recebimentos usam a mesma foto cadastrada para a pessoa nas demais telas. Nomes longos se ajustam ao espaço sem cortar status ou valores.
+
+Em **Resumo do mês → A receber por pessoa**, a linha agora reutiliza o componente da tela de cartões. Tocar na linha expande ou recolhe os valores de cartão e empréstimos; a seta independente à direita abre o perfil da pessoa. O botão extra de abrir pessoa foi removido. Fotos, totais e filtros do mês continuam nos mesmos dados locais.
+
+Validação: TypeScript e 248 testes automatizados. Layout, foto cadastrada de demonstração, expansão e seta independente conferidos no emulador Android. Nenhum valor, quitação ou vínculo é alterado por esses ajustes.
+
+
 ## Agenda e resumo por pessoa na versão 0.3.62
 
 A agenda mostra uma etiqueta acima de cada compromisso: **A pagar**, **A receber**, **Pago** ou **Recebido**. Estimativas ainda pendentes recebem também **Previsto**. A data e a descrição ficam separadas do status. Os filtros e totais anteriores continuam disponíveis.
