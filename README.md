@@ -1,7 +1,7 @@
 # Financeiro
 
 
-**Versão 0.3.60:** revisão de animações e rolagem em todo o app, mantendo o layout e as funções existentes. [Auditoria, correções e testes no Android](docs/auditoria-movimento-0.3.60.md).
+**Versão 0.3.61:** melhorias integradas às telas existentes: agenda financeira, lista compacta opcional de contas, categorias na fatura, controles com gasto e valor restante, filtros de recorrências, progresso das metas e composição do cenário no Futuro. Mantém a navegação, o gráfico de quatro meses, as comparações e os vínculos financeiros. [Como testar a atualização](docs/atualizacoes.md).
 
 **Organização financeira pessoal, do saldo de hoje às parcelas dos próximos meses.**
 

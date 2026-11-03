@@ -1,5 +1,26 @@
 # Atualizações pelo GitHub
 
+## Melhorias integradas na versão 0.3.61
+
+As propostas aprovadas passam a aparecer nas telas do aplicativo, mantendo as funções anteriores e os mesmos dados locais:
+
+- **Início:** agenda do mês acima dos últimos lançamentos. Abra a agenda completa pelo cartão ou em Mais → Gestão financeira → Agenda financeira. Filtre a pagar, a receber e resolvidos.
+- **Contas:** alterne entre a apresentação atual e a lista compacta, com acesso aos mesmos detalhes.
+- **Cartões:** limite disponível quando informado, maiores categorias do cartão e mês selecionados, e acesso à comparação já existente. O gráfico de quatro meses e quem paga a fatura continuam presentes. O limite disponível não é deduzido do valor da fatura.
+- **Resumo do mês:** compromissos ainda previstos ficam separados das receitas e despesas realizadas.
+- **Controles e alertas:** mostram gasto utilizado, percentual, valor restante ou excesso. A edição e exclusão continuam ao tocar no controle.
+- **Recorrentes:** filtros para confirmados, a confirmar e valores variáveis. Previsões continuam sem gerar lançamentos bancários duplicados.
+- **Patrimônio:** objetivos com progresso e valor faltante, junto dos investimentos e detalhes atuais dos cofrinhos.
+- **Futuro:** composição do cenário e atalhos para simular uma nova despesa mensal; todas as hipóteses e ajustes anteriores continuam disponíveis.
+- **Open Finance:** pesquisa e filtros sobre as conexões já importadas, preservando conferências e vínculos.
+
+A agenda lê as obrigações e os recebimentos existentes; não altera quitações, vencimentos nem classificações. Recorrências do cartão não são somadas novamente à fatura. As imagens abaixo usam dados fictícios em emulador Android.
+
+<p><img src="media/claro/agenda-0.3.61.png" width="260" alt="Agenda no Android com dados fictícios"> <img src="media/claro/controles-0.3.61.png" width="260" alt="Controles integrados no Android"> <img src="media/claro/futuro-0.3.61.png" width="260" alt="Futuro com composição do cenário no Android"></p>
+
+Para testar: abra **Mais → Sobre → Verificar atualizações**, instale a nova versão por cima da atual e confira as telas acima. A confirmação no aparelho físico continua necessária para avaliar a fluidez no Poco.
+
+
 ## Auditoria de animações na versão 0.3.60
 
 Corrige a restauração tardia da rolagem, a entrada de painéis após carregar preferências, o fade de linhas nas expansões, a troca de opacidade dos meses, os nós de animação recriados durante edição e a ancoragem de seletores no Android. A barra de carregamento passa a acompanhar somente operações reais. Telas de resumo, controles, compras e configurações já começam com o snapshot local da conexão. O destaque do gráfico também passa a corresponder ao setor efetivamente tocado.
