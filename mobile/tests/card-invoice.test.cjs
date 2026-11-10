@@ -73,3 +73,12 @@ test('saldo da fatura reconhece pagamento confirmado do banco sem duplicar vínc
 
 
 test('fatura do ciclo atual fica aberta mesmo antes do banco publicar o registro mensal',()=>{const {unbilledInvoiceStatus}=load('src/data/cardInvoice.ts');const c={...card,metadata:{}},prior={id:'oct',kind:'bill',itemId:'item',accountId:'card',date:'2026-10-13',amountCents:669217,status:'POSTED',metadata:{closingDate:'2026-10-03'}},records=data([prior,tx('nov',-10000),tx('dec',-10000,{invoiceMonth:'2026-12'})]);assert.equal(unbilledInvoiceStatus(records,c,'2026-11',[],'2026-10-31'),'Em aberto');assert.equal(unbilledInvoiceStatus(records,c,'2026-12',[],'2026-10-31'),'Prévia');assert.equal(unbilledInvoiceStatus(records,c,'2026-11',[],'2026-11-04'),'Fechada');assert.equal(unbilledInvoiceStatus(records,c,'2026-12',[],'2026-11-04'),'Em aberto');assert.equal(unbilledInvoiceStatus(data([tx('unknown',-10000)]),c,'2026-11',[],'2026-10-31'),'Prévia');});
+test('pagamento oficial de outubro exibido como crédito na fatura seguinte não quita novembro',()=>{
+ const {cardBillPaymentSummary:balance}=load('src/data/cardInvoice.ts');
+ const october={id:'oct',kind:'bill',itemId:'item',accountId:'card',date:'2026-10-13',amountCents:669217,status:'IMPORTED',metadata:{payments:[{id:'p',date:'2026-10-13',amountCents:669217}]}};
+ const november={...october,id:'nov',date:'2026-11-10',amountCents:576253,metadata:{sourceId:'nov-provider'}};
+ const credit=tx('oct-payment',669217,{date:'2026-10-13',status:'POSTED',name:'Pagamento débito automático',metadata:{card:true,billId:'nov-provider'}});
+ const d=data([october,november,credit]);
+ assert.equal(balance(d,october,[],'2026-11-10').pendingCents,0);
+ assert.equal(balance(d,november,[],'2026-11-10').pendingCents,576253);
+});

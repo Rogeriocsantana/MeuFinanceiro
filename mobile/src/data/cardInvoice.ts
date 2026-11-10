@@ -45,7 +45,15 @@ export function cardBillingDates(data:LocalBankData,card:BankRecord,month:string
 export function cardBillPaymentSummary(data:LocalBankData,bill:BankRecord,receipts:Reconciliation[]=[],asOf=new Date().toISOString().slice(0,10)){
  const official=(Array.isArray(bill.metadata.payments)?bill.metadata.payments:[]).filter((p:any)=>Number.isSafeInteger(p.amountCents)&&p.amountCents>0&&/^\d{4}-\d{2}-\d{2}$/.test(p.date)&&p.date<=asOf),uniqueOfficial=new Map(official.map((p:any)=>[p.id||JSON.stringify([p.date,p.amountCents]),p]));
  const officialPaid=[...uniqueOfficial.values()].reduce((n:number,p:any)=>n+p.amountCents,0);
- const cardPaid=data.records.filter(r=>r.itemId===bill.itemId&&r.accountId===bill.accountId&&r.status==='POSTED'&&r.date<=asOf&&isCardBillPayment(r)&&!!r.metadata.billId&&(r.metadata.billId===bill.id||r.metadata.billId===bill.metadata.sourceId)).reduce((n,r)=>n+r.amountCents,0);
+ // A payment credit can appear on a later statement even when it settled an earlier one.
+ const priorPayments=new Set<string>();
+ for(const prior of data.records){
+  if(prior.kind!=='bill'||prior.itemId!==bill.itemId||prior.accountId!==bill.accountId||prior.date>=bill.date||['DELETED','CANCELLED'].includes(prior.status))continue;
+  for(const payment of Array.isArray(prior.metadata.payments)?prior.metadata.payments:[]){
+   if(payment.date<=asOf)priorPayments.add(JSON.stringify([payment.date,payment.amountCents]));
+  }
+ }
+ const cardPaid=data.records.filter(r=>r.itemId===bill.itemId&&r.accountId===bill.accountId&&r.status==='POSTED'&&r.date<=asOf&&isCardBillPayment(r)&&!!r.metadata.billId&&(r.metadata.billId===bill.id||r.metadata.billId===bill.metadata.sourceId)&&!priorPayments.has(JSON.stringify([r.date,r.amountCents]))).reduce((n,r)=>n+r.amountCents,0);
  const manualPaid=receipts.filter(r=>r.direction==='bill-payment'&&r.controlId===bill.id&&r.date<=asOf).reduce((n,r)=>n+r.amountCents,0);
  const paidCents=Math.max(officialPaid,cardPaid,manualPaid);return {paidCents,pendingCents:Math.max(0,bill.amountCents-paidCents)};
 }
