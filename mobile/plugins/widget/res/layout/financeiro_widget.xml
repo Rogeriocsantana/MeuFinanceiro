@@ -5,10 +5,13 @@
   <TextView android:id="@+id/widget_brand" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:gravity="center_vertical" android:text="Financeiro" android:textStyle="bold" android:textColor="#A9C3FF" android:textSize="14sp"/>
   <ImageButton android:id="@+id/widget_eye" android:layout_width="44dp" android:layout_height="44dp" android:padding="11dp" android:scaleType="fitCenter" android:background="@android:color/transparent" android:src="@drawable/financeiro_widget_eye_off" android:contentDescription="Mostrar valores"/>
  </LinearLayout>
- <TextView android:id="@+id/widget_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Ainda está previsto" android:textColor="#F1F4FF" android:textStyle="bold" android:textSize="17sp"/>
+ <TextView android:id="@+id/widget_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Saldo em contas" android:textColor="#F1F4FF" android:textStyle="bold" android:textSize="17sp"/>
  <TextView android:id="@+id/widget_period" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#BCC7DE" android:textSize="12sp"/>
  <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
-  <LinearLayout android:id="@+id/widget_summary" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center_vertical" android:orientation="horizontal">
+  <LinearLayout android:id="@+id/widget_summary" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical">
+   <TextView android:id="@+id/widget_balance" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="••••" android:textSize="23sp" android:textStyle="bold" android:textColor="#F1F4FF" android:maxLines="1"/>
+   <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:layout_marginBottom="4dp" android:text="Ainda está previsto" android:textColor="#A9C3FF" android:textSize="12sp" android:textStyle="bold"/>
+   <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
    <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:background="@drawable/financeiro_widget_selected" android:padding="8dp" android:layout_marginEnd="6dp">
     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="A pagar" android:textColor="#BCC7DE" android:textSize="12sp"/>
     <TextView android:id="@+id/widget_pay" android:layout_width="match_parent" android:layout_height="wrap_content" android:maxLines="1" android:textColor="#F1F4FF" android:textStyle="bold" android:textSize="15sp"/>
@@ -17,8 +20,9 @@
     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="A receber" android:textColor="#BCC7DE" android:textSize="12sp"/>
     <TextView android:id="@+id/widget_receive" android:layout_width="match_parent" android:layout_height="wrap_content" android:maxLines="1" android:textColor="#91DFB8" android:textStyle="bold" android:textSize="15sp"/>
    </LinearLayout>
+   </LinearLayout>
   </LinearLayout>
-  <LinearLayout android:id="@+id/widget_agenda" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:gravity="center_vertical" android:visibility="gone"/>
+  <LinearLayout android:id="@+id/widget_agenda" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:paddingTop="5dp" android:visibility="gone"/>
  </FrameLayout>
  <LinearLayout android:layout_width="match_parent" android:layout_height="44dp" android:gravity="center">
   <TextView android:id="@+id/widget_summary_button" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:gravity="center" android:text="Resumo" android:textColor="#D6E3FF" android:textSize="13sp" android:textStyle="bold"/>

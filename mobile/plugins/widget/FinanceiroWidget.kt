@@ -57,9 +57,10 @@ class FinanceiroWidget : AppWidgetProvider() {
         context, 0, Intent(context, FinanceiroWidget::class.java).setAction("$operation:$id"),
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
       )
-      fun amount(key: String) = if (!available) "—" else if (hidden) "••••" else snapshot.optString(key)
-      views.setTextViewText(R.id.widget_title, if (agenda) "Agenda financeira" else "Ainda está previsto")
-      views.setTextViewText(R.id.widget_period, if (!available) "Abra o Financeiro para atualizar" else if (agenda) "Próximos 7 dias" else snapshot.optString("month"))
+      fun amount(key: String) = if (!snapshot.has(key)) "—" else if (hidden) "••••" else snapshot.optString(key)
+      views.setTextViewText(R.id.widget_title, if (agenda) "Agenda financeira" else "Saldo em contas")
+      views.setTextViewText(R.id.widget_period, if (!available) "Abra o Financeiro para atualizar" else if (agenda) "Próximos compromissos" else snapshot.optString("month"))
+      views.setTextViewText(R.id.widget_balance, amount("balance"))
       views.setViewVisibility(R.id.widget_summary, if (agenda) View.GONE else View.VISIBLE)
       views.setViewVisibility(R.id.widget_agenda, if (agenda) View.VISIBLE else View.GONE)
       views.setTextViewText(R.id.widget_pay, amount("pay"))
@@ -86,6 +87,7 @@ class FinanceiroWidget : AppWidgetProvider() {
         row.setTextViewText(R.id.widget_row_name, if (hidden) entry.optString("direction") else entry.optString("name"))
         row.setTextViewText(R.id.widget_row_date, entry.optString("date") + if (hidden) "" else " · " + entry.optString("direction"))
         row.setTextViewText(R.id.widget_row_amount, if (hidden) "••••" else entry.optString("amount"))
+        if (entry.optString("direction") == "A receber") row.setTextColor(R.id.widget_row_amount, 0xFF91DFB8.toInt())
         views.addView(R.id.widget_agenda, row)
       }
       manager.updateAppWidget(id, views)
