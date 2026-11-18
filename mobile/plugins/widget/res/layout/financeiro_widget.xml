@@ -21,7 +21,7 @@
   <LinearLayout android:id="@+id/widget_agenda" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:gravity="center_vertical" android:visibility="gone"/>
  </FrameLayout>
  <LinearLayout android:layout_width="match_parent" android:layout_height="44dp" android:gravity="center">
-  <TextView android:id="@+id/widget_summary_button" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:gravity="center" android:text="Resumo" android:textSize="13sp" android:textStyle="bold"/>
-  <TextView android:id="@+id/widget_agenda_button" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:gravity="center" android:text="Agenda" android:textSize="13sp" android:textStyle="bold"/>
+  <TextView android:id="@+id/widget_summary_button" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:gravity="center" android:text="Resumo" android:textColor="#D6E3FF" android:textSize="13sp" android:textStyle="bold"/>
+  <TextView android:id="@+id/widget_agenda_button" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:gravity="center" android:text="Agenda" android:textColor="#D6E3FF" android:textSize="13sp" android:textStyle="bold"/>
  </LinearLayout>
 </LinearLayout>

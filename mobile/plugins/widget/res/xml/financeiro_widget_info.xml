@@ -1,4 +1,4 @@
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
- android:minWidth="220dp" android:minHeight="220dp" android:targetCellWidth="4" android:targetCellHeight="3"
+ android:minWidth="220dp" android:minHeight="240dp" android:targetCellWidth="4" android:targetCellHeight="4"
  android:initialLayout="@layout/financeiro_widget" android:previewLayout="@layout/financeiro_widget"
  android:updatePeriodMillis="0" android:resizeMode="horizontal|vertical" android:widgetCategory="home_screen"/>
