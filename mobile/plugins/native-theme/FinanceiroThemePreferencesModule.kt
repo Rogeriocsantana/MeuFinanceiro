@@ -16,6 +16,11 @@ class FinanceiroThemePreferencesModule(context: ReactApplicationContext) :
 
   override fun getName(): String = NAME
 
+  @ReactMethod
+  fun publishWidget(snapshot: String) {
+    FinanceiroWidget.publish(reactApplicationContext, snapshot)
+  }
+
   override fun getConstants(): MutableMap<String, Any> = mutableMapOf(
     "themeMode" to savedMode(reactApplicationContext),
     "hasSavedMode" to hasSavedMode(reactApplicationContext)

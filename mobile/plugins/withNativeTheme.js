@@ -32,6 +32,15 @@ function ensureUiModeHandling(manifest) {
   const changes = (activity.$['android:configChanges'] || '').split('|').filter(Boolean);
   if (!changes.includes('uiMode')) changes.push('uiMode');
   activity.$['android:configChanges'] = changes.join('|');
+  const app = manifest.manifest.application[0];
+  app.receiver ||= [];
+  if (!app.receiver.some(item => item.$?.['android:name'] === '.FinanceiroWidget')) {
+    app.receiver.push({
+      $: {'android:name': '.FinanceiroWidget', 'android:exported': 'false', 'android:label': 'Financeiro · Resumo e Agenda'},
+      'intent-filter': [{action: [{$: {'android:name': 'android.appwidget.action.APPWIDGET_UPDATE'}}]}],
+      'meta-data': [{$: {'android:name': 'android.appwidget.provider', 'android:resource': '@xml/financeiro_widget_info'}}],
+    });
+  }
   return manifest;
 }
 
@@ -52,6 +61,8 @@ function withNativeTheme(config) {
     for (const name of ['FinanceiroThemePreferencesModule.kt', 'FinanceiroThemePreferencesPackage.kt']) {
       await fs.copyFile(path.join(__dirname, 'native-theme', name), path.join(destination, name));
     }
+    await fs.copyFile(path.join(__dirname, 'widget/FinanceiroWidget.kt'), path.join(destination, 'FinanceiroWidget.kt'));
+    await fs.cp(path.join(__dirname, 'widget/res'), path.join(mod.modRequest.platformProjectRoot, 'app/src/main/res'), {recursive:true});
     return mod;
   }]);
 }

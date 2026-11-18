@@ -1,3 +1,5 @@
+import {publishFinanceWidget} from './financeWidget';
+import {listControls} from '../data/localControls';
 import type {BackgroundOutcome} from './backgroundOutcome';
 import {refreshIndependent} from './refreshIndependent';
 import {Platform} from 'react-native';
@@ -22,6 +24,7 @@ export async function runAutomaticRefresh(scope:string){
  const outcome:BackgroundOutcome={bank:outcomes.bank.status==='fulfilled'?'updated':'failed',remote:outcomes.remote.status==='rejected'?'failed':outcomes.remote.value?.status||'synced'};
  if(backgroundStarts.has(scope))backgroundResults.set(scope,outcome);
  await stage(scope,'notifications');const data=await loadBankData();
+ if(data?.scope===scope)await listControls().then(controls=>publishFinanceWidget(data,controls)).catch(()=>{});
  if(data){const notices=await Promise.allSettled([scheduleFinancialNotifications(data),...(!backgroundStarts.has(scope)&&outcomes.bank.status==='fulfilled'?[notifyBankUpdated(data,outcomes.bank.value.changed)]:[])]);const failed=notices.find(n=>n.status==='rejected');if(failed?.status==='rejected')outcome.notificationError=failed.reason instanceof Error?failed.reason.message:'Falha ao preparar notificações';}
  if(outcomes.bank.status==='rejected')throw outcomes.bank.reason;
  if(outcomes.remote.status==='rejected')throw outcomes.remote.reason;
