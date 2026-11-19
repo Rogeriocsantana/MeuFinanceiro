@@ -38,15 +38,16 @@ export function publishFinanceWidget(data: LocalBankData | null, controls: Contr
         for (const part of loanInstallments(control)) addMonths(part.dueDate.slice(0, 7), 1);
       }
     }
+    const maxEntries = 6;
     const upcoming = [];
     for (const candidate of [...months].filter(value => value >= month).sort()) {
       const {rows} = candidate === month ? agenda : financialAgenda(data, controls, candidate);
       upcoming.push(...rows.filter(row => row.included && !row.resolved && row.date >= today && row.date.startsWith(candidate)));
-      if (upcoming.length >= 3) break;
+      if (upcoming.length >= maxEntries) break;
     }
     const money = new Intl.NumberFormat('pt-BR', {style: 'currency', currency: 'BRL'});
     const entries = upcoming
-      .slice(0, 3)
+      .slice(0, maxEntries)
       .map(row => ({
         name: row.name,
         date: row.date.slice(5).split('-').reverse().join('/'),

@@ -5,6 +5,8 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
+import android.os.Bundle
+import android.util.TypedValue
 import android.view.View
 import android.widget.RemoteViews
 import org.json.JSONObject
@@ -12,6 +14,10 @@ import org.json.JSONObject
 class FinanceiroWidget : AppWidgetProvider() {
   override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
     ids.forEach { render(context, manager, it) }
+  }
+
+  override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, options: Bundle) {
+    render(context, manager, id)
   }
 
   override fun onDeleted(context: Context, ids: IntArray) {
@@ -53,6 +59,19 @@ class FinanceiroWidget : AppWidgetProvider() {
       val snapshot = runCatching { JSONObject(state.getString("snapshot", "{}") ?: "{}") }.getOrElse { JSONObject() }
       val available = snapshot.has("pay")
       val views = RemoteViews(context.packageName, R.layout.financeiro_widget)
+      val options = manager.getAppWidgetOptions(id)
+      val landscape = context.resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+      val width = options.getInt(if (landscape) AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH else AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)
+      val height = options.getInt(if (landscape) AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT else AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT)
+      val wide = width >= 300
+      val rowCount = ((height - 144) / if (wide) 48 else 42).coerceIn(1, 6).let {
+        if (height > 0) it else 3
+      }
+      if (wide) {
+        views.setTextViewTextSize(R.id.widget_balance, TypedValue.COMPLEX_UNIT_SP, 34f)
+        views.setTextViewTextSize(R.id.widget_pay, TypedValue.COMPLEX_UNIT_SP, 19f)
+        views.setTextViewTextSize(R.id.widget_receive, TypedValue.COMPLEX_UNIT_SP, 19f)
+      }
       fun action(operation: String) = PendingIntent.getBroadcast(
         context, 0, Intent(context, FinanceiroWidget::class.java).setAction("$operation:$id"),
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
@@ -76,17 +95,22 @@ class FinanceiroWidget : AppWidgetProvider() {
       views.setOnClickPendingIntent(R.id.widget_brand, PendingIntent.getActivity(context, 0, open, PendingIntent.FLAG_IMMUTABLE))
       views.removeAllViews(R.id.widget_agenda)
       val entries = snapshot.optJSONArray("entries")
-      if (available && (entries == null || entries.length() == 0)) {
+      if (agenda && available && (entries == null || entries.length() == 0)) {
         val row = RemoteViews(context.packageName, R.layout.financeiro_widget_row)
         row.setTextViewText(R.id.widget_row_name, "Nenhum compromisso previsto")
         views.addView(R.id.widget_agenda, row)
       }
-      if (entries != null) for (index in 0 until minOf(3, entries.length())) {
+      if (agenda && entries != null) for (index in 0 until minOf(rowCount, entries.length())) {
         val entry = entries.optJSONObject(index) ?: continue
         val row = RemoteViews(context.packageName, R.layout.financeiro_widget_row)
         row.setTextViewText(R.id.widget_row_name, if (hidden) entry.optString("direction") else entry.optString("name"))
         row.setTextViewText(R.id.widget_row_date, entry.optString("date") + if (hidden) "" else " · " + entry.optString("direction"))
         row.setTextViewText(R.id.widget_row_amount, if (hidden) "••••" else entry.optString("amount"))
+        if (wide) {
+          row.setTextViewTextSize(R.id.widget_row_name, TypedValue.COMPLEX_UNIT_SP, 15f)
+          row.setTextViewTextSize(R.id.widget_row_date, TypedValue.COMPLEX_UNIT_SP, 12f)
+          row.setTextViewTextSize(R.id.widget_row_amount, TypedValue.COMPLEX_UNIT_SP, 15f)
+        }
         if (entry.optString("direction") == "A receber") row.setTextColor(R.id.widget_row_amount, 0xFF91DFB8.toInt())
         views.addView(R.id.widget_agenda, row)
       }
