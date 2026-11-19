@@ -64,7 +64,7 @@ class FinanceiroWidget : AppWidgetProvider() {
       val width = options.getInt(if (landscape) AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH else AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)
       val height = options.getInt(if (landscape) AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT else AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT)
       val wide = width >= 300
-      val rowCount = ((height - 144) / if (wide) 48 else 42).coerceIn(1, 6).let {
+      val rowCount = ((height - 144) / 40).coerceIn(3, 6).let {
         if (height > 0) it else 3
       }
       if (wide) {
