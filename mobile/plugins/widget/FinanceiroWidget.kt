@@ -68,9 +68,9 @@ class FinanceiroWidget : AppWidgetProvider() {
         if (height > 0) it else 3
       }
       if (wide) {
-        views.setTextViewTextSize(R.id.widget_balance, TypedValue.COMPLEX_UNIT_SP, 34f)
-        views.setTextViewTextSize(R.id.widget_pay, TypedValue.COMPLEX_UNIT_SP, 19f)
-        views.setTextViewTextSize(R.id.widget_receive, TypedValue.COMPLEX_UNIT_SP, 19f)
+        views.setTextViewTextSize(R.id.widget_balance, TypedValue.COMPLEX_UNIT_SP, 38f)
+        views.setTextViewTextSize(R.id.widget_pay, TypedValue.COMPLEX_UNIT_SP, 22f)
+        views.setTextViewTextSize(R.id.widget_receive, TypedValue.COMPLEX_UNIT_SP, 22f)
       }
       fun action(operation: String) = PendingIntent.getBroadcast(
         context, 0, Intent(context, FinanceiroWidget::class.java).setAction("$operation:$id"),
@@ -107,9 +107,9 @@ class FinanceiroWidget : AppWidgetProvider() {
         row.setTextViewText(R.id.widget_row_date, entry.optString("date") + if (hidden) "" else " · " + entry.optString("direction"))
         row.setTextViewText(R.id.widget_row_amount, if (hidden) "••••" else entry.optString("amount"))
         if (wide) {
-          row.setTextViewTextSize(R.id.widget_row_name, TypedValue.COMPLEX_UNIT_SP, 15f)
-          row.setTextViewTextSize(R.id.widget_row_date, TypedValue.COMPLEX_UNIT_SP, 12f)
-          row.setTextViewTextSize(R.id.widget_row_amount, TypedValue.COMPLEX_UNIT_SP, 15f)
+          row.setTextViewTextSize(R.id.widget_row_name, TypedValue.COMPLEX_UNIT_SP, 17f)
+          row.setTextViewTextSize(R.id.widget_row_date, TypedValue.COMPLEX_UNIT_SP, 13f)
+          row.setTextViewTextSize(R.id.widget_row_amount, TypedValue.COMPLEX_UNIT_SP, 17f)
         }
         if (entry.optString("direction") == "A receber") row.setTextColor(R.id.widget_row_amount, 0xFF91DFB8.toInt())
         views.addView(R.id.widget_agenda, row)
