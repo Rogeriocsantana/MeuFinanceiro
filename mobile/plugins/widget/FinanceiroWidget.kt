@@ -76,12 +76,12 @@ class FinanceiroWidget : AppWidgetProvider() {
       views.setOnClickPendingIntent(R.id.widget_brand, PendingIntent.getActivity(context, 0, open, PendingIntent.FLAG_IMMUTABLE))
       views.removeAllViews(R.id.widget_agenda)
       val entries = snapshot.optJSONArray("entries")
-      if (agenda && available && (entries == null || entries.length() == 0)) {
+      if (available && (entries == null || entries.length() == 0)) {
         val row = RemoteViews(context.packageName, R.layout.financeiro_widget_row)
         row.setTextViewText(R.id.widget_row_name, "Nenhum compromisso previsto")
         views.addView(R.id.widget_agenda, row)
       }
-      if (agenda && entries != null) for (index in 0 until minOf(3, entries.length())) {
+      if (entries != null) for (index in 0 until minOf(3, entries.length())) {
         val entry = entries.optJSONObject(index) ?: continue
         val row = RemoteViews(context.packageName, R.layout.financeiro_widget_row)
         row.setTextViewText(R.id.widget_row_name, if (hidden) entry.optString("direction") else entry.optString("name"))
