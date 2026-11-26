@@ -35,3 +35,31 @@ export function reserveYieldRecords(records:BankRecord[]){
  }
  return result;
 }
+
+/** Pair daily balance-derived yield with an unambiguous credit in the same bank account. */
+export function reconcileReserveYieldCredits(records:BankRecord[]):BankRecord[]{
+ const candidates=new Map<string,{credits:BankRecord[];derived:BankRecord[]}>();
+ for(const row of records){
+  if(row.kind!=='transaction'||row.status!=='POSTED'||row.metadata.card||row.amountCents<=0)continue;
+  const derived=Boolean(row.metadata.reserveYield);
+  if(derived){
+   const duration=Date.parse(row.metadata.to)-Date.parse(row.metadata.from);
+   if(!row.metadata.reserveName||!(duration>0&&duration<=36*60*60*1000))continue;
+  }else if(!/^rendimentos?$/i.test(row.name.trim()))continue;
+  const key=JSON.stringify([row.itemId,row.accountId,row.currency,row.date,row.amountCents]);
+  const group=candidates.get(key)||{credits:[],derived:[]};
+  (derived?group.derived:group.credits).push(row);
+  candidates.set(key,group);
+ }
+ const matched=new Map<string,BankRecord>(),duplicates=new Set<string>();
+ for(const {credits,derived} of candidates.values()){
+  if(credits.length!==1||derived.length!==1)continue;
+  const credit=credits[0]!,yieldRow=derived[0]!;
+  matched.set(credit.id,yieldRow);
+  duplicates.add(yieldRow.id);
+ }
+ return records.filter(row=>!duplicates.has(row.id)).map(row=>{
+  const yieldRow=matched.get(row.id);
+  return yieldRow?{...row,name:yieldRow.name,metadata:{...row.metadata,reserveYield:true,reserveKey:yieldRow.metadata.reserveKey,reserveName:yieldRow.metadata.reserveName,from:yieldRow.metadata.from,to:yieldRow.metadata.to,reserveYieldDerivedId:yieldRow.id}}:row;
+ });
+}

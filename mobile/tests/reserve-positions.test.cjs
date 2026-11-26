@@ -21,3 +21,35 @@ test('posição sem variação não cria rendimento zerado; rendimento positivo 
  const before={...pos('2026-10-20',10000),metadata:{...pos('2026-10-20',10000).metadata,movementName:'Apto'}},zero={...pos('2026-10-21',10000),metadata:{...pos('2026-10-21',10000).metadata,movementName:'Apto'}},positive={...pos('2026-10-22',10344),metadata:{...pos('2026-10-22',10344).metadata,movementName:'Apto'}};
  const rows=reserves.reserveYieldRecords([before,zero,positive]);assert.equal(rows.length,1);assert.equal(rows[0].amountCents,344);assert.equal(rows[0].status,'POSTED');
 });
+
+test('créditos importados e rendimentos diários conciliam o histórico de mais de um mês',()=>{
+ const records=[],annotations={};
+ for(const date of ['2026-10-25','2026-11-24','2026-11-25']){
+  for(const [name,amount] of [['Apto',275],['Cofrinho da virada',253]]){
+   const id=date+name, to=date+'T20:00:00Z',from=new Date(Date.parse(to)-86400000).toISOString();
+   records.push(tx(id,date,amount,'Rendimentos'),{...tx(id+'-derived',date,amount,'Rendimento · '+name),metadata:{reserveYield:true,reserveName:name,from,to}});
+   annotations[id]={nature:'Receita'};
+  }
+ }
+ const reconciled=reserves.reconcileReserveYieldCredits(records);
+ assert.equal(records.length,12);
+ assert.equal(reconciled.length,6);
+ assert.deepEqual(reconciled.slice(-2).map(row=>[row.id,row.name]),[['2026-11-25Apto','Rendimento · Apto'],['2026-11-25Cofrinho da virada','Rendimento · Cofrinho da virada']]);
+ for(const [month,total] of [['2026-10',528],['2026-11',1056]]){
+  const data={records:reconciled,annotations};
+  assert.equal(overview.monthlyOverview(data,month).income,total);
+  assert.equal(overview.incomeContributionRows(data,month).reduce((n,row)=>n+row.amountCents,0),total);
+ }
+ assert.deepEqual(reserves.reconcileReserveYieldCredits(reconciled),reconciled);
+});
+
+test('conciliação mantém créditos ambíguos, de outra conta e intervalos de vários dias',()=>{
+ const day='2026-11-25',credit=tx('credit',day,275,'Rendimentos');
+ const daily={...tx('daily',day,275,'Rendimento · Apto'),metadata:{reserveYield:true,reserveName:'Apto',from:'2026-11-24T20:00:00Z',to:'2026-11-25T20:00:00Z'}};
+ for(const records of [
+  [credit,{...credit,id:'another-credit'},daily],
+  [credit,daily,{...daily,id:'another-reserve',metadata:{...daily.metadata,reserveName:'Outro'}}],
+  [credit,{...daily,accountId:'different'}],
+  [credit,{...daily,metadata:{...daily.metadata,from:'2026-11-20T20:00:00Z'}}],
+ ]) assert.deepEqual(reserves.reconcileReserveYieldCredits(records),records);
+});
