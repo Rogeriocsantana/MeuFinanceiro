@@ -11,18 +11,22 @@ const darkColors:Record<string,string>={
  '#e6ebf5':'#3a3a3a','#e4e8f0':'#3a3a3a','#edf0f6':'#3a3a3a','#e6eaf3':'#3a3a3a',
  '#dce2eb':'#505050','#cbd8ff':'#526d99','#dce5f8':'#465466','#edf1ff':'#323843','#f1f3f8':'#303030',
 };
+export const refinedVisual=Platform.OS!=='web'||!__DEV__||typeof location!=='undefined'&&new URLSearchParams(location.search).get('visual')==='acabamento';
 export function themeColor(value:unknown,dark:boolean,property='color'):any{
- if(!dark||typeof value!=='string')return value;
+ if(typeof value!=='string')return value;
  const v=value.toLowerCase();
  // White lettering on the primary action and institution marks stays white.
  if(['color','stroke'].includes(property)&&(v==='#fff'||v==='#ffffff'))return value;
+ if(refinedVisual&&property==="backgroundColor"&&v===C.soft)return dark?"#303030":"#f1f3f6";
+ if(refinedVisual&&dark&&property==='color'&&v===C.ink)return '#f9fbff';
+ if(!dark)return value;
  if(property==='backgroundColor'&&v==='#205dff')return '#205dff';
  if(darkColors[v])return darkColors[v];
  if(/^#[\da-f]{8}$/i.test(v)&&darkColors[v.slice(0,7)])return darkColors[v.slice(0,7)]+v.slice(7);
  return value;
 }
 export function themeStyle(style:any,dark:boolean):any{
- if(!dark)return style;
+ if(!dark&&!refinedVisual)return style;
  const flat=StyleSheet.flatten(style);if(!flat)return flat;
  return Object.fromEntries(Object.entries(flat).map(([key,value])=>[key,/color$/i.test(key)?themeColor(value,dark,key):value]));
 }
@@ -37,7 +41,7 @@ export function ThemeProvider({children}:{children:React.ReactNode}){
  const [ready,setReady]=useState(Platform.OS==='web'||savedNativeMode!==null);
  useEffect(()=>{if(Platform.OS!=='web')return;const style=document.createElement('style');style.textContent='input:focus,textarea:focus{outline:2px solid var(--preview-focus)!important;outline-offset:1px}';document.head.appendChild(style);return()=>style.remove();},[]);
  useEffect(()=>{if(Platform.OS!=='web'&&savedNativeMode===null){let live=true;import('expo-sqlite/kv-store').then(m=>m.default.getItemAsync(key)).then(value=>{if(live&&!touched.current){setDark(value==='dark');persistNativeMode(value==='dark');}}).catch(()=>{}).finally(()=>{if(live)setReady(true);});return()=>{live=false;};}},[]);
- useEffect(()=>{if(Platform.OS==='web'){document.documentElement.style.colorScheme=dark?'dark':'light';document.documentElement.style.setProperty('--preview-focus',dark?'#75a7ff':C.blue);document.body.style.backgroundColor=dark?'#202020':C.bg;}},[dark]);
+ useEffect(()=>{if(Platform.OS==='web'){document.documentElement.style.colorScheme=dark?'dark':'light';document.documentElement.style.setProperty('--preview-focus',dark?'#75a7ff':C.blue);document.body.style.backgroundColor=themeColor(C.bg,dark,'backgroundColor');}},[dark]);
  const toggle=()=>{touched.current=true;setDark(previous=>{const next=!previous;persistNativeMode(next);try{if(Platform.OS==='web')localStorage.setItem(key,next?'dark':'light');else import('expo-sqlite/kv-store').then(m=>m.default.setItemAsync(key,next?'dark':'light')).catch(()=>{});}catch{}return next;});};
  return <ThemeContext.Provider value={{dark,ready,toggle}}>{children}</ThemeContext.Provider>;
 }
