@@ -48,6 +48,10 @@ export function prepareBankUpdate(snapshot:BankSnapshot,previous:BankRecord[]):B
  const records=snapshot.records.map(row=>{const old=prior.get(row.id);if(row.kind!=='transaction'||!old)return row;
   const key=bankRevisionKey(row),decision=old.metadata?.sourceDecision;
   if(decision?.key===key&&decision.choice==='keep'){const metadata={...old.metadata};delete metadata.sourceRevision;return {...old,metadata};}
+  const confirmationOnly=old.status==='PENDING'&&row.status==='POSTED'&&
+   old.itemId===row.itemId&&old.accountId===row.accountId&&old.currency===row.currency&&
+   bankRevisionKey({...row,status:old.status})===bankRevisionKey(old);
+  if(confirmationOnly)return row;
   if(bankRevisionKey(old)===key)return {...row,metadata:{...row.metadata,...(decision?{sourceDecision:decision}:{})}};
   held++;const priorRevision=old.metadata?.sourceRevision,revision=priorRevision?.key===key?priorRevision:{key,record:row,amountCents:row.amountCents,date:row.date,status:row.status,observedAt:snapshot.syncedAt};return {...old,metadata:{...old.metadata,sourceRevision:revision}};
  });

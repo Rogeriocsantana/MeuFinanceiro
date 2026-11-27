@@ -39,7 +39,6 @@ test('decisões bancárias guardam escolha, reapresentam nova diferença e rejei
  const kept=model.resolveBankRevision(held,key,'keep','decision');assert.equal(kept.amountCents,-100);assert.equal(kept.metadata.sourceRevision,undefined);const repeated=model.prepareBankUpdate(snapshot,[kept]);assert.equal(repeated.records[0].metadata.sourceRevision,undefined);assert.equal(repeated.records[0].amountCents,-100);assert.equal(repeated.warnings.length,0);
  const changed=model.prepareBankUpdate({...snapshot,records:[{...received,amountCents:-130}]},[kept]).records[0];assert.ok(changed.metadata.sourceRevision);assert.throws(()=>model.resolveBankRevision(changed,key,'accept','later'),/mudou/);
  const accepted=model.resolveBankRevision(held,key,'accept','decision');assert.equal(accepted.amountCents,-120);assert.equal(accepted.invoiceMonth,'2026-11');assert.equal(accepted.metadata.sourceRevision,undefined);assert.equal(model.prepareBankUpdate(snapshot,[accepted]).warnings.length,0);
- const pending=model.prepareBankUpdate({...snapshot,records:[{...old,status:'POSTED'}]},[{...old,status:'PENDING'}]);assert.equal(pending.records[0].status,'PENDING');assert.equal(pending.records[0].metadata.sourceRevision.record.status,'POSTED');
 });
 test('SQLite confirma decisão por usuário ativo e mantém anotação e fila remota',async()=>{
  const db=new DatabaseSync(':memory:');db.exec(load('src/data/schema.ts').SCHEMA);const queue=[];
@@ -68,3 +67,23 @@ test('parcela de agosto com data original em março passa no período pela fatur
  const bill={kind:'bill',id:'bill',itemId:'i',accountId:'card',date:'2026-08-10',metadata:{sourceId:'aug'}};assert.equal(model.bankRecordInImportPeriod({...row,invoiceMonth:'2026-03'},'2026-08-01',[bill]),true);
 });
 
+
+test('confirma automaticamente a CPFL quando apenas o status muda',()=>{
+ const account={kind:'account',itemId:'i',accountId:'a',currency:'BRL',institution:'Itaú'};
+ const raw={id:'cpfl',accountId:'a',description:'Débito automático DA CPFL PTA',amount:-147.76,date:'2026-11-19',status:'PENDING'};
+ const old=model.transactionRecord(raw,account),posted=model.transactionRecord({...raw,status:'POSTED'},account);
+ const snapshot=records=>({scope:'owner',syncedAt:'2026-11-27T15:28:30Z',warnings:[],records});
+ const held={...old,metadata:{...old.metadata,sourceRevision:{key:model.bankRevisionKey(posted),record:posted}}};
+ const result=model.prepareBankUpdate(snapshot([posted]),[held]);
+ assert.equal(result.records[0].status,'POSTED');
+ assert.equal(result.records[0].metadata.sourceRevision,undefined);
+ assert.deepEqual(result.warnings,[]);
+ for(const changed of [{...posted,amountCents:-14775},{...posted,date:'2026-11-20'},{...posted,name:'Outra descrição'},{...posted,invoiceMonth:'2026-12'}]){
+  const review=model.prepareBankUpdate(snapshot([changed]),[old]);
+  assert.equal(review.records[0].status,'PENDING');
+  assert.ok(review.records[0].metadata.sourceRevision);
+ }
+ assert.ok(model.prepareBankUpdate(snapshot([old]),[posted]).records[0].metadata.sourceRevision);
+ const kept={...old,metadata:{...old.metadata,sourceDecision:{key:model.bankRevisionKey(posted),choice:'keep'}}};
+ assert.equal(model.prepareBankUpdate(snapshot([posted]),[kept]).records[0].status,'PENDING');
+});
