@@ -63,3 +63,24 @@ export function reconcileReserveYieldCredits(records:BankRecord[]):BankRecord[]{
   return yieldRow?{...row,name:yieldRow.name,metadata:{...row.metadata,reserveYield:true,reserveKey:yieldRow.metadata.reserveKey,reserveName:yieldRow.metadata.reserveName,from:yieldRow.metadata.from,to:yieldRow.metadata.to,reserveYieldDerivedId:yieldRow.id}}:row;
  });
 }
+
+/** Identify the unnamed credit leg without adding a second movement to the reserve ledger. */
+export function pairedReserveDepositCredits(records:BankRecord[]):Set<string>{
+ const groups=new Map<string,{debits:BankRecord[];credits:BankRecord[]}>();
+ for(const row of records){
+  if(row.kind!=='transaction'||row.status!=='POSTED'||row.metadata.card||!row.amountCents)continue;
+  const name=row.name.trim();
+  const credit=row.amountCents>0&&/^Dinheiro reservado$/i.test(name);
+  const debit=row.amountCents<0&&/^Dinheiro reservado\s+\S/i.test(name);
+  if(!credit&&!debit)continue;
+  const key=JSON.stringify([row.itemId,row.accountId,row.currency,row.date,Math.abs(row.amountCents)]);
+  const group=groups.get(key)||{debits:[],credits:[]};
+  (credit?group.credits:group.debits).push(row);
+  groups.set(key,group);
+ }
+ const matched=new Set<string>();
+ for(const {credits,debits} of groups.values()){
+  if(credits.length===1&&debits.length===1)matched.add(credits[0]!.id);
+ }
+ return matched;
+}

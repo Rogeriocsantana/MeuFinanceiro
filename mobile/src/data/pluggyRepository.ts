@@ -1,6 +1,6 @@
 import {protectBankIdentity,BankIdentityConflict,identityConflicts,type IdentityDecision} from './bankIdentity';
 import {recordInsightImport} from './insightState';
-import {reserveYieldRecords,latestReservePositions,reconcileReserveYieldCredits} from './reservePositions';
+import {reserveYieldRecords,latestReservePositions,pairedReserveDepositCredits,reconcileReserveYieldCredits} from './reservePositions';
 import {queueRemoteEdit} from './queueRemoteEdit';
 import {Platform} from 'react-native';
 import * as Crypto from 'expo-crypto';
@@ -23,6 +23,12 @@ export async function loadBankData():Promise<LocalBankData|null>{
  const notes=await db.getAllAsync<{id:string;payload:string}>('SELECT id,payload FROM pluggy_annotations WHERE scope=?',scope);
  const reconciled=reconcileReserveYieldCredits(records.map(row=>JSON.parse(row.payload)));
  const annotations:LocalBankData['annotations']=Object.fromEntries(notes.map(row=>[row.id,JSON.parse(row.payload)]));
+ for(const id of pairedReserveDepositCredits(reconciled)){
+  const annotation=annotations[id];
+  if(!annotation?.event||annotation.event==='Nenhum evento'){
+   annotations[id]={...annotation,event:'Transferência / aporte ou resgate'};
+  }
+ }
  for(const row of reconciled){
   const derivedId=row.metadata.reserveYieldDerivedId;
   if(!derivedId)continue;

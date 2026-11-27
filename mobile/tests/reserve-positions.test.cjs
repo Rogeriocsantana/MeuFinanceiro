@@ -53,3 +53,18 @@ test('conciliação mantém créditos ambíguos, de outra conta e intervalos de 
   [credit,{...daily,metadata:{...daily.metadata,from:'2026-11-20T20:00:00Z'}}],
  ]) assert.deepEqual(reserves.reconcileReserveYieldCredits(records),records);
 });
+
+test('contrapartida sem nome só é reconhecida para um aporte único no mesmo dia e conta',()=>{
+ const date='2026-11-27',inbound=tx('pix',date,100000,'Pix recebido Adriana'),
+  debit=tx('debit',date,-100000,'Dinheiro reservado Apto'),
+  credit=tx('credit',date,100000,'Dinheiro reservado');
+ const rows=[inbound,debit,credit];
+ assert.deepEqual([...reserves.pairedReserveDepositCredits(rows)],['credit']);
+ assert.equal(reserves.pairedReserveDepositCredits([...rows,{...debit,id:'ambiguous'}]).size,0);
+ assert.equal(reserves.pairedReserveDepositCredits([credit,{...debit,accountId:'other'}]).size,0);
+ assert.equal(reserves.pairedReserveDepositCredits([credit,{...debit,date:'2026-11-26'}]).size,0);
+ const data={records:rows,annotations:{credit:{event:'Transferência / aporte ou resgate'}}};
+ assert.equal(overview.monthlyOverview(data,'2026-11').unclassifiedIncome,100000);
+ assert.equal(overview.monthlyOverview(data,'2026-11').income,0);
+ assert.equal(overview.accountReserves(data,credit.accountId)[0].netCents,100000);
+});
